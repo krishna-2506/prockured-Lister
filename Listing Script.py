@@ -988,167 +988,311 @@ def click_add_attribute(page):
 
 
 def find_empty_name_input(page):
-    """Return first visible empty attribute Name input and its bounding box."""
-    selectors = [
-        "input[placeholder*='Name']",
-        "input[placeholder*='Material']",
-        "input[aria-label*='Name']",
-    ]
+    """Return a usable attribute Name input and its bounding box.
 
-    candidates = []
-    seen_boxes = set()
+    v16 fix:
+    Prockured's Create Product page can keep a default/stale attribute card where
+    the Name field already contains something like "Product Type" but the value
+    field is still empty. The older engine only accepted empty Name fields whose
+    placeholder contained Name/Material, so it could fail before filling even the
+    first attribute. This version finds attribute cards from their value input,
+    then returns either an empty Name field or a safe reusable blank card.
+    """
+    try:
+        info = page.evaluate(
+            r"""() => {
+                function visible(el) {
+                    if (!el) return false;
+                    const r = el.getBoundingClientRect();
+                    const s = window.getComputedStyle(el);
+                    return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+                }
+                function norm(s) { return (s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+                function rectObj(el) {
+                    const r = el.getBoundingClientRect();
+                    return {x:r.x, y:r.y, left:r.left, top:r.top, right:r.right, bottom:r.bottom, width:r.width, height:r.height};
+                }
+                function inputIndex(el) {
+                    return [...document.querySelectorAll('input')].indexOf(el);
+                }
+                function isValueInput(el) {
+                    const ph = norm(el.getAttribute('placeholder'));
+                    const aria = norm(el.getAttribute('aria-label'));
+                    return ph.includes('add value') || ph.includes('press enter') || aria.includes('value');
+                }
+                function isTextInput(el) {
+                    const type = norm(el.getAttribute('type'));
+                    return el.tagName === 'INPUT' && !['hidden','checkbox','radio','file'].includes(type);
+                }
+                function findBlock(valueInput) {
+                    let node = valueInput.parentElement;
+                    for (let depth = 0; node && depth < 12; depth++, node = node.parentElement) {
+                        const r = node.getBoundingClientRect();
+                        const text = norm(node.innerText || node.textContent);
+                        const inputs = [...node.querySelectorAll('input')].filter(visible);
+                        const hasNameLike = inputs.some(inp => isTextInput(inp) && !isValueInput(inp));
+                        const hasValue = inputs.some(inp => isTextInput(inp) && isValueInput(inp));
+                        const hasToggles = text.includes('filters') && text.includes('variants');
+                        const buttons = [...node.querySelectorAll('button')].filter(visible);
+                        const hasTrash = buttons.some(btn => {
+                            const t = norm(btn.innerText || btn.textContent);
+                            const aria = norm(btn.getAttribute('aria-label'));
+                            const title = norm(btn.getAttribute('title'));
+                            const html = norm(btn.innerHTML || '');
+                            const br = btn.getBoundingClientRect();
+                            return aria.includes('delete') || title.includes('delete') || html.includes('trash') || html.includes('lucide-trash') || (!!btn.querySelector('svg') && !t && br.width <= 90 && br.height <= 90);
+                        });
+                        if (hasNameLike && hasValue && (hasToggles || hasTrash) && r.width > 300 && r.height > 80 && r.height < 900) {
+                            return node;
+                        }
+                    }
+                    return null;
+                }
+                function hasRealValueChip(block) {
+                    const boilerplate = new Set(['filters','variants','add value and press enter (e.g. red)','name (e.g. material)']);
+                    const valueInputs = [...block.querySelectorAll('input')]
+                        .filter(visible)
+                        .filter(inp => isTextInput(inp) && isValueInput(inp));
+                    if (valueInputs.some(inp => norm(inp.value))) return true;
 
-    for selector in selectors:
-        loc = page.locator(selector)
-        count = loc.count()
-        for i in range(count):
-            item = loc.nth(i)
-            try:
-                if not item.is_visible():
-                    continue
-                value = item.input_value(timeout=800).strip()
-                if value:
-                    continue
-                box = item.bounding_box(timeout=800)
-                if not box:
-                    continue
-                key = (round(box["x"]), round(box["y"]), round(box["width"]), round(box["height"]))
-                if key in seen_boxes:
-                    continue
-                seen_boxes.add(key)
-                candidates.append((box["y"], box["x"], item, box))
-            except Exception:
-                continue
+                    // Chips are small text elements inside the value area. Ignore labels and button names.
+                    const texts = [...block.querySelectorAll('span, div, button')]
+                        .filter(visible)
+                        .map(el => norm(el.innerText || el.textContent || ''))
+                        .filter(t => t && t.length < 100)
+                        .filter(t => !boilerplate.has(t))
+                        .filter(t => !t.includes('add value') && !t.includes('press enter'))
+                        .filter(t => !t.includes('filters') && !t.includes('variants'));
+                    // A non-empty name field also appears as text in some wrappers; do not treat it as a chip.
+                    return texts.length > 1;
+                }
 
-    if not candidates:
+                const allInputs = [...document.querySelectorAll('input')];
+                const valueInputs = allInputs.filter(visible).filter(inp => isTextInput(inp) && isValueInput(inp));
+                const candidates = [];
+
+                for (const valueInput of valueInputs) {
+                    const block = findBlock(valueInput);
+                    if (!block) continue;
+                    const br = rectObj(block);
+                    const textInputs = [...block.querySelectorAll('input')]
+                        .filter(visible)
+                        .filter(inp => isTextInput(inp) && !isValueInput(inp))
+                        .map(inp => ({el:inp, r:rectObj(inp), value:(inp.value || '').trim(), ph:inp.getAttribute('placeholder') || '', index:inputIndex(inp)}))
+                        .filter(o => o.index >= 0)
+                        .sort((a,b) => a.r.top - b.r.top || a.r.left - b.r.left);
+                    if (!textInputs.length) continue;
+                    const name = textInputs[0];
+                    const empty = !name.value;
+                    const reusable = empty || !hasRealValueChip(block);
+                    if (reusable) {
+                        candidates.push({
+                            index:name.index,
+                            empty,
+                            reusable,
+                            value:name.value,
+                            placeholder:name.ph,
+                            x:name.r.x,
+                            y:name.r.y,
+                            width:name.r.width,
+                            height:name.r.height,
+                            blockTop:br.top
+                        });
+                    }
+                }
+
+                candidates.sort((a,b) => {
+                    // Empty name fields are best. Reusable stale blank cards are second.
+                    if (a.empty !== b.empty) return a.empty ? -1 : 1;
+                    return a.blockTop - b.blockTop || a.x - b.x;
+                });
+
+                return candidates[0] || null;
+            }"""
+        )
+        if not info:
+            return None, None
+        loc = page.locator("input").nth(int(info["index"]))
+        box = {"x": info["x"], "y": info["y"], "width": info["width"], "height": info["height"]}
+        if info.get("value"):
+            log(f"  Reusing blank/stale Attribute Name field currently showing '{info.get('value')}'.")
+        return loc, box
+    except Exception as e:
+        log(f"  find_empty_name_input failed: {e}")
         return None, None
-
-    # Work from the first empty Name field currently visible.
-    candidates.sort(key=lambda x: (x[0], x[1]))
-    return candidates[0][2], candidates[0][3]
 
 
 def find_value_input_for_name(page, name_box):
-    """Find the value input belonging to the same attribute block as the given name input.
+    """Find the value input belonging to the same attribute block as the given name input."""
+    try:
+        info = page.evaluate(
+            r"""(nameBox) => {
+                function visible(el) {
+                    if (!el) return false;
+                    const r = el.getBoundingClientRect();
+                    const s = window.getComputedStyle(el);
+                    return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+                }
+                function norm(s) { return (s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+                function rectObj(el) {
+                    const r = el.getBoundingClientRect();
+                    return {x:r.x, y:r.y, left:r.left, top:r.top, right:r.right, bottom:r.bottom, width:r.width, height:r.height};
+                }
+                function inputIndex(el) { return [...document.querySelectorAll('input')].indexOf(el); }
+                function isValueInput(el) {
+                    const ph = norm(el.getAttribute('placeholder'));
+                    const aria = norm(el.getAttribute('aria-label'));
+                    return ph.includes('add value') || ph.includes('press enter') || aria.includes('value');
+                }
+                function isTextInput(el) {
+                    const type = norm(el.getAttribute('type'));
+                    return el.tagName === 'INPUT' && !['hidden','checkbox','radio','file'].includes(type);
+                }
+                function nearBox(el) {
+                    const r = el.getBoundingClientRect();
+                    return Math.abs(r.top - nameBox.y) <= 40 && Math.abs(r.left - nameBox.x) <= 160;
+                }
+                const nameInput = [...document.querySelectorAll('input')]
+                    .filter(visible)
+                    .filter(inp => isTextInput(inp) && !isValueInput(inp))
+                    .map(inp => ({el:inp, r:rectObj(inp), score:Math.abs(inp.getBoundingClientRect().top - nameBox.y) + Math.abs(inp.getBoundingClientRect().left - nameBox.x)}))
+                    .filter(o => nearBox(o.el))
+                    .sort((a,b) => a.score - b.score)[0]?.el || null;
+                if (!nameInput) return null;
 
-    v7 fix:
-    - Recomputed coordinates are used after scroll.
-    - Search is wider because Prockured can shift blocks while dropdowns open/close.
-    - Falls back to the nearest visible value field below the current Name field.
-    """
-    selectors = [
-        "input[placeholder*='Add value']",
-        "input[placeholder*='press Enter']",
-        "input[aria-label*='value']",
-    ]
+                let block = null;
+                let node = nameInput.parentElement;
+                for (let depth = 0; node && depth < 12; depth++, node = node.parentElement) {
+                    const r = node.getBoundingClientRect();
+                    const text = norm(node.innerText || node.textContent);
+                    const valueInputs = [...node.querySelectorAll('input')]
+                        .filter(visible)
+                        .filter(inp => isTextInput(inp) && isValueInput(inp));
+                    if (valueInputs.length && (text.includes('filters') || text.includes('variants') || r.height > 80) && r.width > 300 && r.height < 900) {
+                        block = node;
+                        break;
+                    }
+                }
+                if (!block) return null;
 
-    all_candidates = []
-    strict_candidates = []
-    seen_boxes = set()
+                const values = [...block.querySelectorAll('input')]
+                    .filter(visible)
+                    .filter(inp => isTextInput(inp) && isValueInput(inp))
+                    .map(inp => ({el:inp, r:rectObj(inp), index:inputIndex(inp)}))
+                    .filter(o => o.index >= 0)
+                    .sort((a,b) => a.r.top - b.r.top || a.r.left - b.r.left);
+                if (!values.length) return null;
+                const v = values[0];
+                return {index:v.index, x:v.r.x, y:v.r.y, width:v.r.width, height:v.r.height};
+            }""",
+            name_box,
+        )
+        if not info:
+            return None, None
+        loc = page.locator("input").nth(int(info["index"]))
+        box = {"x": info["x"], "y": info["y"], "width": info["width"], "height": info["height"]}
+        return loc, box
+    except Exception as e:
+        log(f"  find_value_input_for_name failed: {e}")
+        return None, None
 
-    for selector in selectors:
-        loc = page.locator(selector)
-        try:
-            count = loc.count()
-        except Exception:
-            count = 0
-
-        for i in range(count):
-            item = loc.nth(i)
-            try:
-                if not item.is_visible():
-                    continue
-                box = item.bounding_box(timeout=1200)
-                if not box:
-                    continue
-
-                key = (round(box["x"]), round(box["y"]), round(box["width"]), round(box["height"]))
-                if key in seen_boxes:
-                    continue
-                seen_boxes.add(key)
-
-                dy = box["y"] - name_box["y"]
-                dx = abs(box["x"] - name_box["x"])
-
-                # Keep all visible value fields for fallback debugging/search.
-                all_candidates.append((abs(dy), dy, dx, item, box))
-
-                # Normal case: value field is below the name field inside the same block.
-                # Wider than v6 because scroll/dropdown can shift the layout.
-                if 15 <= dy <= 420 and dx <= 650:
-                    strict_candidates.append((dy, dx, item, box))
-            except Exception:
-                continue
-
-    if strict_candidates:
-        strict_candidates.sort(key=lambda x: (x[0], x[1]))
-        return strict_candidates[0][2], strict_candidates[0][3]
-
-    # Fallback: nearest visible value input below the Name field.
-    below = [c for c in all_candidates if c[1] > 0]
-    if below:
-        below.sort(key=lambda x: (x[1], x[2]))
-        return below[0][3], below[0][4]
-
-    # Last fallback: nearest value input anywhere.
-    if all_candidates:
-        all_candidates.sort(key=lambda x: (x[0], x[2]))
-        return all_candidates[0][3], all_candidates[0][4]
-
-    return None, None
 
 def click_first_attribute_delete_button(page) -> bool:
-    """Delete one attribute block from the Attributes tab, if one exists."""
+    """Delete one visible attribute card from the Attributes tab, if one exists."""
     js = r"""
     () => {
-        const visible = (el) => {
+        function visible(el) {
+            if (!el) return false;
             const r = el.getBoundingClientRect();
             const st = window.getComputedStyle(el);
-            return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none';
-        };
-        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-
-        const nameInputs = Array.from(document.querySelectorAll('input'))
-            .filter(el => visible(el))
-            .filter(el => {
-                const ph = norm(el.getAttribute('placeholder'));
-                return ph.includes('name') || ph.includes('material');
-            });
-
-        for (const input of nameInputs) {
-            let node = input.parentElement;
-            for (let depth = 0; node && depth < 9; depth++, node = node.parentElement) {
-                const valueInputs = Array.from(node.querySelectorAll('input'))
-                    .filter(el => visible(el))
-                    .filter(el => {
-                        const ph = norm(el.getAttribute('placeholder'));
-                        return ph.includes('add value') || ph.includes('press enter');
-                    });
-                if (!valueInputs.length) continue;
-
-                const buttons = Array.from(node.querySelectorAll('button')).filter(visible);
-                const deleteButtons = buttons.filter(btn => {
-                    const text = norm(btn.innerText || btn.textContent);
+            return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none' && st.opacity !== '0';
+        }
+        function norm(s) { return (s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+        function isValueInput(el) {
+            const ph = norm(el.getAttribute('placeholder'));
+            const aria = norm(el.getAttribute('aria-label'));
+            return ph.includes('add value') || ph.includes('press enter') || aria.includes('value');
+        }
+        function isTextInput(el) {
+            const type = norm(el.getAttribute('type'));
+            return el.tagName === 'INPUT' && !['hidden','checkbox','radio','file'].includes(type);
+        }
+        function clickEl(el) {
+            el.scrollIntoView({block:'center', inline:'nearest'});
+            const r = el.getBoundingClientRect();
+            const x = r.left + r.width / 2;
+            const y = r.top + r.height / 2;
+            try { el.click(); return true; } catch(e) {}
+            el.dispatchEvent(new MouseEvent('mousedown', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
+            el.dispatchEvent(new MouseEvent('mouseup', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
+            el.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
+            return true;
+        }
+        function findBlock(valueInput) {
+            let node = valueInput.parentElement;
+            for (let depth = 0; node && depth < 12; depth++, node = node.parentElement) {
+                const r = node.getBoundingClientRect();
+                const text = norm(node.innerText || node.textContent);
+                const inputs = [...node.querySelectorAll('input')].filter(visible);
+                const hasNameLike = inputs.some(inp => isTextInput(inp) && !isValueInput(inp));
+                const hasValue = inputs.some(inp => isTextInput(inp) && isValueInput(inp));
+                const hasToggles = text.includes('filters') && text.includes('variants');
+                const buttons = [...node.querySelectorAll('button')].filter(visible);
+                const hasTrash = buttons.some(btn => {
+                    const t = norm(btn.innerText || btn.textContent);
                     const aria = norm(btn.getAttribute('aria-label'));
                     const title = norm(btn.getAttribute('title'));
-                    const r = btn.getBoundingClientRect();
                     const html = norm(btn.innerHTML || '');
-                    const hasSvg = !!btn.querySelector('svg');
-                    return aria.includes('delete') || title.includes('delete') || text.includes('delete') || html.includes('trash') || (hasSvg && r.width <= 90 && r.height <= 90);
+                    const br = btn.getBoundingClientRect();
+                    return aria.includes('delete') || title.includes('delete') || html.includes('trash') || html.includes('lucide-trash') || (!!btn.querySelector('svg') && !['filters','variants'].includes(t) && br.width <= 90 && br.height <= 90);
                 });
-
-                if (deleteButtons.length) {
-                    deleteButtons[deleteButtons.length - 1].click();
-                    return true;
+                if (hasNameLike && hasValue && (hasToggles || hasTrash) && r.width > 300 && r.height > 80 && r.height < 900) {
+                    return node;
                 }
             }
+            return null;
         }
-        return false;
+
+        const valueInput = [...document.querySelectorAll('input')]
+            .filter(visible)
+            .filter(inp => isTextInput(inp) && isValueInput(inp))
+            .sort((a,b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top || a.getBoundingClientRect().left - b.getBoundingClientRect().left)[0];
+        if (!valueInput) return false;
+
+        const block = findBlock(valueInput);
+        if (!block) return false;
+
+        const buttons = [...block.querySelectorAll('button')]
+            .filter(visible)
+            .map(btn => {
+                const r = btn.getBoundingClientRect();
+                const t = norm(btn.innerText || btn.textContent);
+                const aria = norm(btn.getAttribute('aria-label'));
+                const title = norm(btn.getAttribute('title'));
+                const html = norm(btn.innerHTML || '');
+                const hasSvg = !!btn.querySelector('svg');
+                let score = 0;
+                if (aria.includes('delete') || title.includes('delete') || t.includes('delete')) score -= 1000;
+                if (html.includes('trash') || html.includes('lucide-trash')) score -= 800;
+                if (hasSvg) score -= 100;
+                if (t.includes('filters') || t.includes('variants') || t.includes('add attribute')) score += 2000;
+                score -= r.left / 20;       // right-most icon is usually delete
+                score += (r.width * r.height) / 1000;
+                return {btn, text:t, aria, title, hasSvg, x:r.left, y:r.top, w:r.width, h:r.height, score};
+            })
+            .filter(o => !o.text.includes('filters') && !o.text.includes('variants') && !o.text.includes('add attribute'))
+            .filter(o => o.hasSvg || o.aria.includes('delete') || o.title.includes('delete') || o.text.includes('delete'))
+            .sort((a,b) => a.score - b.score);
+
+        if (!buttons.length) return false;
+        clickEl(buttons[0].btn);
+        return true;
     }
     """
     try:
         return bool(page.evaluate(js))
-    except Exception:
+    except Exception as e:
+        log(f"  Attribute delete click failed: {e}")
         return False
 
 
@@ -1163,9 +1307,8 @@ def clear_existing_attributes(page, max_clicks: int = 80):
         if not clicked:
             break
         deleted += 1
-        page.wait_for_timeout(250)
+        page.wait_for_timeout(350)
     log(f"Deleted/cleared attribute blocks: {deleted}")
-
 
 def dismiss_name_dropdown(page):
     """Close the suggestion dropdown after typing attribute name."""
@@ -1190,144 +1333,218 @@ def dismiss_name_dropdown(page):
 
 
 
-def set_variants_checkbox_for_attribute(page, name_box) -> bool:
-    """Tick the Variants checkbox inside the current attribute block.
+def set_attribute_toggle_by_name(page, attribute_name: str, toggle_name: str = "Variants", desired: bool = True) -> bool:
+    """Set a Filters/Variants checkbox for an attribute by attribute name.
 
-    v15 fix:
-    Prockured's checkbox is a real checkbox with accessible name "Variants".
-    The older code sometimes clicked the surrounding button/card instead of the
-    checkbox. This version finds the current attribute block from the Name input
-    coordinates, then clicks the actual Variants checkbox or its label in that block.
+    This is safer than coordinate-based clicking. It finds the attribute card whose
+    Name input value equals the given attribute name, then selects the real checkbox
+    on the same row as the exact toggle label. It only clicks when the checkbox is
+    not already in the desired state, so it will not accidentally deselect Variants.
     """
+    attribute_name = (attribute_name or "").strip()
+    toggle_name = (toggle_name or "Variants").strip()
+    if not attribute_name or not toggle_name:
+        return False
+
     try:
         res = page.evaluate(
-            r"""(nameBox) => {
+            r"""({attributeName, toggleName, desired}) => {
                 function visible(el) {
                     if (!el) return false;
                     const r = el.getBoundingClientRect();
                     const st = window.getComputedStyle(el);
                     return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none' && st.opacity !== '0';
                 }
-                function norm(s) { return (s || '').replace(/\s+/g,' ').trim().toLowerCase(); }
-                function rect(el) { const r = el.getBoundingClientRect(); return {x:r.x, y:r.y, width:r.width, height:r.height, left:r.left, top:r.top, right:r.right, bottom:r.bottom}; }
-                function near(a, b, tol=8) { return Math.abs(a-b) <= tol; }
-                function clickElement(el) {
+                function norm(s) { return (s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+                function rect(el) { const r = el.getBoundingClientRect(); return {left:r.left, top:r.top, right:r.right, bottom:r.bottom, width:r.width, height:r.height, cx:r.left+r.width/2, cy:r.top+r.height/2}; }
+                function sameLine(a, b, tol=34) { return Math.abs(a.cy - b.cy) <= tol; }
+                function clickOnce(el) {
                     el.scrollIntoView({block:'center', inline:'nearest'});
-                    try { el.click(); return true; } catch(e) {}
                     const r = el.getBoundingClientRect();
                     const x = r.left + r.width / 2;
                     const y = r.top + r.height / 2;
-                    for (const type of ['pointerdown','mousedown','mouseup','click']) {
-                        el.dispatchEvent(new MouseEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y}));
-                    }
+                    try { el.click(); return true; } catch(e) {}
+                    el.dispatchEvent(new MouseEvent('mousedown', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
+                    el.dispatchEvent(new MouseEvent('mouseup', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
+                    el.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, clientX:x, clientY:y}));
                     return true;
                 }
+                function setNativeChecked(input, val) {
+                    try {
+                        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set;
+                        setter.call(input, !!val);
+                    } catch(e) {
+                        input.checked = !!val;
+                    }
+                    input.dispatchEvent(new Event('input', {bubbles:true}));
+                    input.dispatchEvent(new Event('change', {bubbles:true}));
+                }
+                function checkedState(el) {
+                    if (!el) return false;
+                    if (el.matches && el.matches('input[type="checkbox"]')) return !!el.checked;
+                    const inner = el.querySelector && el.querySelector('input[type="checkbox"]');
+                    if (inner) return !!inner.checked;
+                    const ariaChecked = norm(el.getAttribute && el.getAttribute('aria-checked'));
+                    const ariaPressed = norm(el.getAttribute && el.getAttribute('aria-pressed'));
+                    return ariaChecked === 'true' || ariaPressed === 'true';
+                }
 
-                // Find the specific name input using the coordinates passed from Playwright.
-                const inputs = [...document.querySelectorAll('input')].filter(visible);
-                const nameInput = inputs
-                    .map(el => ({el, r: rect(el), ph: norm(el.getAttribute('placeholder'))}))
-                    .filter(o => (o.ph.includes('name') || o.ph.includes('material')))
-                    .filter(o => near(o.r.top, nameBox.y, 12) || near(o.r.y, nameBox.y, 12))
-                    .sort((a,b) => Math.abs(a.r.left - nameBox.x) - Math.abs(b.r.left - nameBox.x))[0]?.el ||
-                    inputs.map(el => ({el, r: rect(el)}))
-                        .filter(o => Math.abs(o.r.top - nameBox.y) < 30 && Math.abs(o.r.left - nameBox.x) < 80)[0]?.el;
+                const wantedAttr = norm(attributeName);
+                const wantedToggle = norm(toggleName);
 
-                if (!nameInput) return {ok:false, reason:'name-input-not-found-near-box', nameBox};
+                // Find the attribute Name input by its value, not by old screen coordinates.
+                const nameInputs = [...document.querySelectorAll('input')]
+                    .filter(visible)
+                    .map(el => ({el, r:rect(el), value:norm(el.value), ph:norm(el.getAttribute('placeholder'))}))
+                    .filter(o => o.value === wantedAttr || (o.value.includes(wantedAttr) && (o.ph.includes('name') || o.ph.includes('material'))))
+                    .sort((a,b) => a.r.top - b.r.top || a.r.left - b.r.left);
 
-                // Find the smallest ancestor block that contains value input + Variants text.
+                if (!nameInputs.length) {
+                    return {ok:false, reason:'attribute-name-input-not-found', attributeName};
+                }
+
+                const nameInput = nameInputs[0].el;
+
+                // Find the smallest attribute card containing this Name input, a value field, and toggle labels.
                 let block = null;
                 let node = nameInput.parentElement;
-                for (let depth = 0; node && depth < 10; depth++, node = node.parentElement) {
+                for (let depth = 0; node && depth < 12; depth++, node = node.parentElement) {
                     const r = node.getBoundingClientRect();
-                    const txt = norm(node.innerText || node.textContent);
+                    const text = norm(node.innerText || node.textContent);
                     const hasValueInput = [...node.querySelectorAll('input')].some(inp => {
                         const ph = norm(inp.getAttribute('placeholder'));
                         return visible(inp) && (ph.includes('add value') || ph.includes('press enter'));
                     });
-                    const hasVariantsText = txt.includes('variants');
-                    if (hasValueInput && hasVariantsText && r.width > 250 && r.height > 100 && r.height < 900) {
+                    const hasToggleText = text.includes('filters') && text.includes('variants');
+                    if (hasValueInput && hasToggleText && r.width > 350 && r.height > 80 && r.height < 900) {
                         block = node;
                         break;
                     }
                 }
-                if (!block) return {ok:false, reason:'attribute-block-not-found'};
+                if (!block) return {ok:false, reason:'attribute-block-not-found', attributeName};
 
-                const blockRect = block.getBoundingClientRect();
+                const labels = [...block.querySelectorAll('label, span, div, button')]
+                    .filter(visible)
+                    .map(el => ({el, text:norm(el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title')), r:rect(el)}))
+                    .filter(o => o.text === wantedToggle || o.text.endsWith(' ' + wantedToggle) || o.text.startsWith(wantedToggle + ' '))
+                    .sort((a,b) => (a.r.width*a.r.height) - (b.r.width*b.r.height));
 
-                // Prefer the real checkbox whose nearby label says Variants.
                 const checkboxes = [...block.querySelectorAll('input[type="checkbox"]')]
                     .filter(visible)
-                    .map(el => {
-                        const r = el.getBoundingClientRect();
-                        const nearbyTextEls = [...block.querySelectorAll('label, span, div, button')]
-                            .filter(visible)
-                            .map(t => ({el:t, text:norm(t.innerText || t.textContent), r:t.getBoundingClientRect()}))
-                            .filter(t => t.text.includes('variants'))
-                            .filter(t => Math.abs((t.r.top + t.r.height/2) - (r.top + r.height/2)) < 35 || (t.r.top >= r.top - 18 && t.r.top <= r.bottom + 18))
-                            .filter(t => t.r.left >= r.left - 25 && t.r.left <= r.right + 260);
-                        const parentText = norm(el.closest('label, button, div')?.innerText || el.parentElement?.innerText || '');
-                        const score = (nearbyTextEls.length ? 0 : 1000) + Math.abs(r.top - nameBox.y) + Math.max(0, r.left - 220);
-                        return {el, r, parentText, nearby: nearbyTextEls.map(x => x.text).join(' | '), score};
-                    })
-                    .filter(o => o.parentText.includes('variants') || o.nearby.includes('variants'))
-                    .sort((a,b) => a.score - b.score);
+                    .map(el => ({el, r:rect(el)}));
 
-                let target = checkboxes[0]?.el || null;
-                let targetKind = target ? 'real-checkbox' : '';
+                let target = null;
+                let matchedLabel = null;
+                let method = '';
 
-                // Fallback: click a button/label that says Variants inside this same block.
-                if (!target) {
-                    const controls = [...block.querySelectorAll('button, label, div[role="checkbox"], div, span')]
-                        .filter(visible)
-                        .map(el => ({el, text:norm(el.innerText || el.textContent), r:el.getBoundingClientRect()}))
-                        .filter(o => o.text === 'variants' || o.text.includes('variants'))
-                        .filter(o => o.r.top >= blockRect.top && o.r.top <= blockRect.bottom)
-                        .sort((a,b) => (a.r.width*a.r.height) - (b.r.width*b.r.height));
-                    if (controls.length) {
-                        target = controls[0].el;
-                        targetKind = 'variants-label-button';
+                // Best case: real checkbox with aria/name/title exactly Variants.
+                target = checkboxes.find(o => {
+                    const aria = norm(o.el.getAttribute('aria-label') || o.el.getAttribute('title') || o.el.name || o.el.id);
+                    return aria === wantedToggle || aria.includes(wantedToggle);
+                })?.el || null;
+                if (target) method = 'checkbox-aria';
+
+                // Normal Prockured UI: label text "Variants" is on the same row as the checkbox.
+                if (!target && labels.length && checkboxes.length) {
+                    let best = null;
+                    for (const lab of labels) {
+                        for (const cb of checkboxes) {
+                            if (!sameLine(lab.r, cb.r)) continue;
+                            const horizontalGap = Math.abs(lab.r.cx - cb.r.cx);
+                            const cbBeforeLabel = cb.r.cx <= lab.r.cx + 15;
+                            const score = horizontalGap + (cbBeforeLabel ? 0 : 120) + Math.abs(lab.r.cy - cb.r.cy) * 5;
+                            if (!best || score < best.score) best = {checkbox:cb.el, label:lab, score};
+                        }
+                    }
+                    if (best) {
+                        target = best.checkbox;
+                        matchedLabel = best.label.text;
+                        method = 'nearest-checkbox-to-toggle-label';
                     }
                 }
 
-                if (!target) return {ok:false, reason:'variants-control-not-found-in-block'};
-
-                const beforeChecked = target.matches('input[type="checkbox"]') ? target.checked :
-                    !!(target.querySelector('input[type="checkbox"]')?.checked) ||
-                    (target.getAttribute('aria-checked') || '').toLowerCase() === 'true' ||
-                    (target.getAttribute('aria-pressed') || '').toLowerCase() === 'true' ||
-                    norm(target.className || '').includes('checked') || norm(target.className || '').includes('active');
-
-                if (!beforeChecked) {
-                    // If target is not the input but contains one, click the input directly.
-                    const innerCheckbox = target.matches('input[type="checkbox"]') ? target : target.querySelector('input[type="checkbox"]');
-                    clickElement(innerCheckbox || target);
+                // Fallback: if an exact label wraps a checkbox, use the wrapped checkbox.
+                if (!target) {
+                    for (const lab of labels) {
+                        const wrapped = lab.el.querySelector && lab.el.querySelector('input[type="checkbox"]');
+                        if (wrapped && visible(wrapped)) {
+                            target = wrapped;
+                            matchedLabel = lab.text;
+                            method = 'wrapped-checkbox';
+                            break;
+                        }
+                    }
                 }
 
-                const afterChecked = target.matches('input[type="checkbox"]') ? target.checked :
-                    !!(target.querySelector('input[type="checkbox"]')?.checked) ||
-                    (target.getAttribute('aria-checked') || '').toLowerCase() === 'true' ||
-                    (target.getAttribute('aria-pressed') || '').toLowerCase() === 'true' ||
-                    norm(target.className || '').includes('checked') || norm(target.className || '').includes('active');
+                // Last fallback: click the exact label/control, but only when it has no Filters text.
+                if (!target && labels.length) {
+                    const lab = labels.find(o => o.text === wantedToggle);
+                    if (lab) {
+                        target = lab.el;
+                        matchedLabel = lab.text;
+                        method = 'exact-toggle-label-control';
+                    }
+                }
+
+                if (!target) {
+                    return {ok:false, reason:'toggle-checkbox-not-found', attributeName, toggleName, labels:labels.map(l => l.text), checkboxCount:checkboxes.length};
+                }
+
+                const before = checkedState(target);
+                if (before !== !!desired) {
+                    if (target.matches && target.matches('input[type="checkbox"]')) {
+                        clickOnce(target);
+                        if (target.checked !== !!desired) setNativeChecked(target, !!desired);
+                    } else {
+                        clickOnce(target);
+                    }
+                }
+                const after = checkedState(target);
 
                 return {
-                    ok:true,
-                    kind:targetKind,
-                    clicked:!beforeChecked,
-                    beforeChecked,
-                    afterChecked,
-                    blockTop:Math.round(blockRect.top),
-                    targetText:norm(target.innerText || target.textContent || target.getAttribute('aria-label') || '')
+                    ok: after === !!desired,
+                    attributeName,
+                    toggleName,
+                    desired: !!desired,
+                    beforeChecked: before,
+                    afterChecked: after,
+                    clicked: before !== !!desired,
+                    method,
+                    matchedLabel
                 };
             }""",
-            name_box,
+            {"attributeName": attribute_name, "toggleName": toggle_name, "desired": bool(desired)},
         )
-        log(f"  Variants checkbox result: {res}")
-        page.wait_for_timeout(300)
+        log(f"  {toggle_name} checkbox for '{attribute_name}' result: {res}")
+        page.wait_for_timeout(350)
         return bool(res and res.get("ok"))
     except Exception as e:
-        log(f"  Could not tick Variants: {e}")
+        log(f"  Could not set {toggle_name} for '{attribute_name}': {e}")
         return False
+
+
+def set_variants_checkbox_for_attribute(page, name_box) -> bool:
+    """Legacy coordinate method disabled.
+
+    The old coordinate-based function could click the right Variants control and then
+    misread/click again on some Prockured layouts. New code sets Variants by exact
+    attribute name through set_attribute_toggle_by_name().
+    """
+    log("  Skipping legacy coordinate-based Variants click; using attribute-name verification instead.")
+    return True
+
+
+def ensure_variant_attributes_checked(page, data: ProductData):
+    """Final safety pass: every [VARIANT ATTRIBUTES] name must have Variants checked."""
+    if not data or not data.variant_attributes:
+        return
+    log("Verifying Variants checkbox for all [VARIANT ATTRIBUTES]...")
+    for name, _value in data.variant_attributes:
+        if stop_requested:
+            log("Stopped while verifying variant attributes.")
+            return
+        set_attribute_toggle_by_name(page, name, "Variants", True)
+    log("Variant attribute checkbox verification done.")
 
 
 def fill_value_tags(value_input, value: str, split_values: bool, press_enter: bool = True):
@@ -1395,7 +1612,9 @@ def fill_one_attribute(page, name: str, value: str, press_enter: bool = PRESS_EN
     fill_value_tags(value_input, value, split_values=split_values, press_enter=press_enter)
 
     if is_variant:
-        set_variants_checkbox_for_attribute(page, name_box)
+        # Set by exact attribute name, not old screen coordinates. This prevents
+        # the checkbox from being clicked again and accidentally deselected.
+        set_attribute_toggle_by_name(page, name, "Variants", True)
 
     return True
 
@@ -1484,27 +1703,38 @@ def remove_empty_attribute_blocks(page, max_remove: int = 20):
     log(f"Removed leftover empty Attribute blocks: {removed}")
 
 def fill_attributes(page, data: ProductData, one=False, clear=True):
-    combined = []
+    """Fill all normal attributes first, then all variant attributes.
+
+    Returns True only when the Attributes step completed successfully. Full mode
+    uses this return value so it will not move to Variations/Generate Variants if
+    attributes failed or only partially filled.
+    """
+    regular = []
+    variant = []
     for name, value in data.attributes:
-        combined.append({"name": name, "value": value, "is_variant": False, "split_values": False})
+        regular.append({"name": name, "value": value, "is_variant": False, "split_values": False})
     for name, value in data.variant_attributes:
-        combined.append({"name": name, "value": value, "is_variant": True, "split_values": True})
+        variant.append({"name": name, "value": value, "is_variant": True, "split_values": True})
+
+    combined = regular + variant
 
     if not combined:
         log("No [ATTRIBUTES] or [VARIANT ATTRIBUTES] data loaded. Skipping Attributes.")
-        return
+        return True
 
     click_tab(page, "Attributes")
     attrs = combined[:1] if one else combined
 
+    log(f"Attributes to fill: regular={len(regular)} variant={len(variant)} total={len(attrs)}")
+
     if clear and not one:
         clear_existing_attributes(page)
-        page.wait_for_timeout(400)
+        page.wait_for_timeout(500)
 
     for index, item in enumerate(attrs, start=1):
         if stop_requested:
             log("Stopped current automation during Attributes.")
-            return
+            return False
 
         ok = fill_one_attribute(
             page,
@@ -1515,19 +1745,20 @@ def fill_attributes(page, data: ProductData, one=False, clear=True):
             split_values=item["split_values"],
         )
         if not ok:
-            log(f"Stopped at attribute {index}. Fix manually or test with one attribute.")
-            return
+            log(f"Attribute fill failed at {index}/{len(attrs)}: {item['name']}. Full flow will NOT move to Variations.")
+            return False
 
-        # Do NOT click Add Attribute here.
-        # Earlier versions clicked Add after every filled attribute, and when Prockured
-        # shifted/failed to reuse that fresh empty block, it left blank attribute cards
-        # between filled attributes. The next loop now creates a new block only when
-        # fill_one_attribute() cannot find an existing empty Name field.
-        page.wait_for_timeout(250)
+        page.wait_for_timeout(300)
 
     # Clean up any accidentally leftover empty attribute cards at the end.
     remove_empty_attribute_blocks(page)
-    log("Attributes fill done.")
+
+    # Final safety check for variable products: only turn Variants ON for the
+    # attributes listed under [VARIANT ATTRIBUTES]. Never toggle them off.
+    ensure_variant_attributes_checked(page, data)
+
+    log("Attributes fill done. All attributes completed before Variations.")
+    return True
 
 
 
@@ -1606,11 +1837,13 @@ def fill_variant_prices(page, data: ProductData):
     res = page.evaluate(
         r"""({entries}) => {
             function visible(el) {
+                if (!el) return false;
                 const r = el.getBoundingClientRect();
                 const s = window.getComputedStyle(el);
-                return r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden';
+                return r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden' && s.opacity !== '0';
             }
             function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim(); }
+            function exactText(el) { return (el.innerText || el.textContent || '').replace(/\s+/g,' ').trim().toLowerCase(); }
             function setValue(el, val) {
                 el.scrollIntoView({block:'center', inline:'nearest'});
                 el.focus();
@@ -1621,6 +1854,18 @@ def fill_variant_prices(page, data: ProductData):
                 el.dispatchEvent(new Event('input', {bubbles:true}));
                 el.dispatchEvent(new Event('change', {bubbles:true}));
                 el.blur();
+            }
+            function clickElement(el) {
+                if (!el) return false;
+                el.scrollIntoView({block:'center', inline:'nearest'});
+                try { el.click(); return true; } catch(e) {}
+                const r = el.getBoundingClientRect();
+                const x = r.left + r.width / 2;
+                const y = r.top + r.height / 2;
+                for (const type of ['pointerdown','mousedown','mouseup','click']) {
+                    el.dispatchEvent(new MouseEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, view:window}));
+                }
+                return true;
             }
             function findCards() {
                 const all = [...document.querySelectorAll('div, section, article, li')].filter(visible);
@@ -1650,22 +1895,70 @@ def fill_variant_prices(page, data: ProductData):
                 if (!vals.length) return false;
                 return vals.every(v => textNorm.includes(norm(v)));
             }
-            function deactivateCard(card) {
-                const text = card.innerText || card.textContent || '';
-                if (!/active/i.test(text)) return false;
+            function findActiveCheckbox(card) {
                 const checks = [...card.querySelectorAll('input[type="checkbox"]')].filter(visible);
-                for (const cb of checks) {
-                    const near = (cb.closest('label, button, div')?.innerText || '').toLowerCase();
-                    if (near.includes('active')) {
-                        if (cb.checked) cb.click();
-                        return true;
+                const controls = [...card.querySelectorAll('label, span, div, button, p, strong')]
+                    .filter(visible)
+                    .map(el => ({el, text: exactText(el), r: el.getBoundingClientRect()}))
+                    .filter(o => o.text === 'active' || o.text.includes('active'));
+
+                // Best path: real checkbox in the same row as the visible Active label.
+                const candidates = checks.map(cb => {
+                    const r = cb.getBoundingClientRect();
+                    const cx = r.left + r.width / 2;
+                    const cy = r.top + r.height / 2;
+                    const parentText = exactText(cb.closest('label, button, div') || cb.parentElement || cb);
+                    const nearbyActive = controls.filter(o => {
+                        const oy = o.r.top + o.r.height / 2;
+                        const ox = o.r.left + o.r.width / 2;
+                        return Math.abs(oy - cy) <= 40 && ox >= cx - 80 && ox <= cx + 260;
+                    });
+                    const score = (parentText.includes('active') || nearbyActive.length ? 0 : 10000)
+                        + Math.min(...(nearbyActive.map(o => Math.abs((o.r.top + o.r.height / 2) - cy)).concat([500])))
+                        + r.top / 1000;
+                    return {cb, r, parentText, nearbyText: nearbyActive.map(o => o.text).join(' | '), score};
+                }).filter(o => o.parentText.includes('active') || o.nearbyText.includes('active'))
+                  .sort((a,b) => a.score - b.score);
+
+                if (candidates.length) return candidates[0].cb;
+
+                // Fallback: visible text "Active" may be wrapped in a clickable label containing the checkbox.
+                for (const c of controls) {
+                    const label = c.el.closest('label');
+                    if (label) {
+                        const cb = label.querySelector('input[type="checkbox"]');
+                        if (cb && visible(cb)) return cb;
                     }
                 }
-                const btns = [...card.querySelectorAll('button, label, div')].filter(visible);
-                const activeBtn = btns.find(b => ((b.innerText||b.textContent||'').toLowerCase().includes('active')));
-                if (activeBtn) { activeBtn.click(); return true; }
-                return false;
+                return null;
             }
+            function setCardActive(card, shouldBeActive) {
+                const cb = findActiveCheckbox(card);
+                if (cb) {
+                    const before = !!cb.checked;
+                    if (before !== shouldBeActive) {
+                        clickElement(cb);
+                    }
+                    const after = !!cb.checked;
+                    return {ok:true, method:'checkbox', before, after, changed: before !== after};
+                }
+
+                // Custom-control fallback only when it exposes a state. This avoids blind double-toggles.
+                const activeControls = [...card.querySelectorAll('[role="checkbox"], button, label, div')]
+                    .filter(visible)
+                    .map(el => ({el, text: exactText(el), aria: (el.getAttribute('aria-checked') || el.getAttribute('aria-pressed') || '').toLowerCase()}))
+                    .filter(o => (o.text === 'active' || o.text.includes('active')) && (o.aria === 'true' || o.aria === 'false'));
+                if (activeControls.length) {
+                    const target = activeControls[0];
+                    const before = target.aria === 'true';
+                    if (before !== shouldBeActive) clickElement(target.el);
+                    const afterRaw = (target.el.getAttribute('aria-checked') || target.el.getAttribute('aria-pressed') || '').toLowerCase();
+                    const after = afterRaw === 'true';
+                    return {ok:true, method:'aria-control', before, after, changed: before !== after};
+                }
+                return {ok:false, reason:'active-checkbox-not-found'};
+            }
+
             const cards = findCards();
             const usedEntries = new Set();
             const results = [];
@@ -1685,16 +1978,18 @@ def fill_variant_prices(page, data: ProductData):
                     .map(el => ({el, r:el.getBoundingClientRect(), ph:el.placeholder || '', name:el.getAttribute('aria-label') || ''}))
                     .sort((a,b) => a.r.top - b.r.top || a.r.left - b.r.left);
                 if (matched && inputs.length >= 3) {
-                    // Prockured variant order: SKU, Regular, Sale.
+                    // Prockured variant order: SKU, Regular/Base, Sale/Discount.
+                    const activeResult = setCardActive(card, true);
                     setValue(inputs[1].el, matched.base_price);
                     setValue(inputs[2].el, matched.sale_price);
                     usedEntries.add(matchedIndex);
-                    results.push({card:i+1, status:'priced-active', key:matched.key, base:matched.base_price, sale:matched.sale_price});
+                    results.push({card:i+1, status:'priced-active', active:activeResult, key:matched.key, base:matched.base_price, sale:matched.sale_price});
                 } else if (matched && inputs.length < 3) {
-                    results.push({card:i+1, status:'matched-but-inputs-missing', key:matched.key, inputs:inputs.length});
+                    const activeResult = setCardActive(card, true);
+                    results.push({card:i+1, status:'matched-but-inputs-missing', active:activeResult, key:matched.key, inputs:inputs.length});
                 } else {
-                    const deactivated = deactivateCard(card);
-                    results.push({card:i+1, status: deactivated ? 'inactive-no-price' : 'no-price-match', preview:text.slice(0,120)});
+                    const activeResult = setCardActive(card, false);
+                    results.push({card:i+1, status: activeResult.ok ? 'inactive-no-price' : 'no-price-match-active-not-found', active:activeResult, preview:text.slice(0,120)});
                 }
             }
             return {cards:cards.length, priced:results.filter(r => r.status==='priced-active').length, results};
@@ -1705,7 +2000,6 @@ def fill_variant_prices(page, data: ProductData):
     for r in res.get("results", []):
         log(f"  {r}")
     log("Variant price fill done.")
-
 
 def fill_variations(page, data: ProductData):
     if not is_variable_product(data):
@@ -2539,8 +2833,11 @@ def run_command(cmd, page):
             data = require_data()
             fill_basics(page, data)
             if stop_requested: return
-            fill_attributes(page, data, one=False, clear=True)
+            attributes_ok = fill_attributes(page, data, one=False, clear=True)
             if stop_requested: return
+            if not attributes_ok:
+                log("Full fill stopped because Attributes did not complete. Variations were NOT generated.")
+                return
             if is_variable_product(data):
                 fill_variations(page, data)
                 if stop_requested: return
@@ -2591,23 +2888,22 @@ def start_hotkeys():
 
 def main():
     log("========================================")
-    log("Prockured Full Listing Hotkey v14 Variable Products - No Brand/Category Touch")
+    log("Made By Krishna Maheshwari")
     log("========================================")
-    log("Alt + Shift + L = Load clipboard data")
-    log("Alt + Shift + B = Fill Basics only")
-    log("Alt + Shift + A = Fill Attributes only")
-    log("Alt + Shift + 1 = Test one attribute")
-    log("Alt + Shift + S = Fill SEO only")
-    log("Alt + Shift + V = Generate/fill Variants only")
-    log("Alt + Shift + M = Fill Media only")
-    log("Alt + Shift + I = Update Media image alt text only")
-    log("Alt + Shift + R = Fill Pricing only")
-    log("Alt + Shift + F = Fill Full product: Basics + Attributes + Variants/Pricing + SEO + Media")
-    log("Alt + Shift + D = Debug visible fields")
-    log("Alt + Shift + X = Stop current automation")
-    log("Alt + Shift + Q = Quit script")
+    log("Alt + Shift + L  = Load clipboard data")
+    log("Alt + Shift + B  = Fill Basics")
+    log("Alt + Shift + A  = Fill Attributes")
+    log("Alt + Shift + 1  = Test one Attribute")
+    log("Alt + Shift + V  = Generate/Fix Variations")
+    log("Alt + Shift + S  = Fill SEO")
+    log("Alt + Shift + M  = Fill Media")
+    log("Alt + Shift + I  = Update Image Alt Text")
+    log("Alt + Shift + R  = Fill Pricing")
+    log("Alt + Shift + F  = Full Fill")
+    log("Alt + Shift + D  = Debug Current Tab")
+    log("Alt + Shift + X  = Stop Current Action")
+    log("Alt + Shift + Q  = Quit")
     log("========================================")
-    log("Important: Brand and Category are NOT touched. SKU is NOT touched. Slug is cleared/left empty. Product Tags are filled only inside Product Tags. Supports simple + variable products. Variant checkbox click fixed. Variant price logic: sale price = given price rounded up, regular/base = stable 10-30% markup rounded up. Missing variant prices are marked inactive where possible.")
 
     hotkeys = start_hotkeys()
     with sync_playwright() as pw:

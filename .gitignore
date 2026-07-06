@@ -1,0 +1,48 @@
+# Output directories (auto-generated, do not commit)
+prockured_output/
+prockured_scraper_output/
+image_scraper_output/
+old/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Data files (may contain sensitive/internal product data)
+*.csv
+!test_input.csv
+
+# Logs
+*.log
+
+# Excel files (internal data)
+*.xlsx
+*.xls
+
+# IDE / OS stuff
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# Old/draft scripts (keep only the final versions)
+Listing.py
+Listingv3.py
+Listingv5.py
+finall.py
+v47.py
+v55.py
+"1st year syllabus of BTech as per NEP2020 recommendations to be implemented from MO2024 (1).pdf"
+
+# Old folder
+old/

@@ -1,0 +1,12 @@
+playwright
+requests
+beautifulsoup4
+rapidfuzz
+pillow
+imagehash
+tqdm
+pyperclip
+pynput
+pandas
+openpyxl
+lxml

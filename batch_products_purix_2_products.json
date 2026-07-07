@@ -1,0 +1,103 @@
+{
+  "products": [
+    {
+      "admin": {
+        "row_id": "1",
+        "sku": "258266PURIXVE634",
+        "category_option": "Bakery Ingredients (Food and Beverage)",
+        "brand_option": "Purix",
+        "hsn_code": "",
+        "gst_percent": 5,
+        "unit": "pcs",
+        "status": "ACTIVE",
+        "fill_sections": [
+          "category",
+          "brand",
+          "basics",
+          "attributes",
+          "seo",
+          "pricing"
+        ]
+      },
+      "basics": {
+        "product_type": "Simple Product",
+        "product_name": "Purix Veg Gelatine 75 gm VE634",
+        "product_tags": "Purix veg gelatine, veg gelatine 75 gm, vegetarian gelatine, dessert setting agent, bakery gelling ingredient, pudding setting ingredient, jelly setting ingredient, foodservice bakery ingredient",
+        "description": "Purix Veg Gelatine 75 gm VE634 is a vegetarian gelatine-style ingredient used for setting and thickening desserts, jellies, puddings, custards, jams, soups and selected bakery preparations.\n\nIt is suitable for bakeries, cafés, hotels, cloud kitchens, dessert counters and foodservice kitchens that need a small-pack gelling ingredient for controlled recipe preparation and texture support.\n\nPurix Veg Gelatine 75 gm VE634 can be used in hot liquid preparations and then cooled for setting, making it useful for dessert layers, fruit gel preparations, marshmallow-style items, pudding bases and other kitchen applications.",
+        "short_description": "Purix Veg Gelatine 75 gm VE634 is a vegetarian gelatine-style bakery and dessert ingredient for setting and thickening jellies, puddings, custards, fruit gelatin, jams, soups and dessert preparations. It is useful for bakeries, cafés, hotels, cloud kitchens and foodservice kitchens that need controlled texture support in small-batch preparation."
+      },
+      "attributes": {
+        "quantity": "75 gm",
+        "product_type": "Veg Gelatine",
+        "food_type": "Bakery Ingredient",
+        "pack_type": "Single Pack",
+        "packing_type": "75 gm Pack",
+        "form": "Powder",
+        "preparation_type": "Gelling and Thickening Ingredient",
+        "usage": "Jelly Preparation, Dessert Setting, Pudding Preparation, Custard Preparation, Jam, Soup and Bakery Dessert Prep",
+        "suitable_for": "Bakeries, Cafés, Hotels, Dessert Counters, Cloud Kitchens, Foodservice Kitchens",
+        "service_type": "Bakery Production, Dessert Preparation, Foodservice Kitchen Use"
+      },
+      "seo": {
+        "seo_title": "Purix Veg Gelatine 75 gm",
+        "seo_description": "Purix Veg Gelatine 75 gm for jellies, puddings, custards, jams, soups and dessert setting in bakery kitchens.",
+        "seo_keywords": "Purix Veg Gelatine 75 gm, veg gelatine 75 gm, vegetarian gelatine, dessert setting agent, jelly setting ingredient, bakery gelling ingredient, pudding setting ingredient, foodservice bakery ingredient"
+      },
+      "pricing": {
+        "sale_price": 277.2,
+        "currency": "INR",
+        "tax_note": "+ Tax"
+      }
+    },
+    {
+      "admin": {
+        "row_id": "2",
+        "sku": "258266PURIXGE432",
+        "category_option": "Bakery Ingredients (Food and Beverage)",
+        "brand_option": "Purix",
+        "hsn_code": "",
+        "gst_percent": 5,
+        "unit": "pcs",
+        "status": "ACTIVE",
+        "fill_sections": [
+          "category",
+          "brand",
+          "basics",
+          "attributes",
+          "seo",
+          "pricing"
+        ]
+      },
+      "basics": {
+        "product_type": "Simple Product",
+        "product_name": "Purix Gel Cold Glazed 2.5 Kg GE432",
+        "product_tags": "Purix gel cold glazed, cold glaze 2.5 kg, neutral cold glaze, cake glaze, pastry glaze, bakery topping gel, dessert glaze, foodservice bakery glaze",
+        "description": "Purix Gel Cold Glazed 2.5 Kg GE432 is a ready-to-use cold glaze for coating or topping cakes, pastries, confectionery and sweet bakery products with a finished surface.\n\nThe 2.5 kg pack is practical for bakeries, cafés, hotels, dessert counters, cloud kitchens and foodservice kitchens that need glaze for repeated cake and pastry preparation.\n\nPurix Gel Cold Glazed 2.5 Kg GE432 helps create a neat gloss on desserts and baked goods without complex preparation. It is useful for fruit tarts, pastries, cakes, mousse desserts and display items that need a clean neutral glaze finish.",
+        "short_description": "Purix Gel Cold Glazed 2.5 Kg GE432 is a ready-to-use neutral cold glaze for cakes, pastries, confectionery, fruit tarts, mousse desserts and bakery display items. The 2.5 kg pack is suitable for bakeries, cafés, hotels, dessert counters, cloud kitchens and foodservice kitchens handling regular glazing and topping work."
+      },
+      "attributes": {
+        "quantity": "2.5 Kg",
+        "product_type": "Cold Glaze",
+        "food_type": "Bakery Ingredient",
+        "pack_type": "Bulk Pack",
+        "packing_type": "2.5 Kg Pack",
+        "form": "Gel",
+        "flavour": "Neutral",
+        "preparation_type": "Ready-to-Use Cold Glaze",
+        "usage": "Cake Glazing, Pastry Topping, Tart Finishing, Dessert Decoration, Confectionery Coating",
+        "suitable_for": "Bakeries, Cafés, Hotels, Dessert Counters, Cloud Kitchens, Foodservice Kitchens",
+        "service_type": "Bakery Production, Dessert Preparation, Foodservice Kitchen Use"
+      },
+      "seo": {
+        "seo_title": "Purix Gel Cold Glazed 2.5 Kg",
+        "seo_description": "Purix Gel Cold Glazed 2.5 Kg neutral glaze for cakes, pastries, tarts and bakery dessert finishing.",
+        "seo_keywords": "Purix Gel Cold Glazed 2.5 Kg, Purix cold glaze, neutral cold glaze 2.5 kg, cake glaze, pastry glaze, bakery topping gel, dessert glaze, foodservice bakery glaze"
+      },
+      "pricing": {
+        "sale_price": 184.8,
+        "currency": "INR",
+        "tax_note": "+ Tax"
+      }
+    }
+  ]
+}

@@ -175,17 +175,43 @@ def js_array_block(text: str, start: int, max_len: int = 350000) -> str:
                 end = i + 1; break
     return text[start:end] if end else ""
 
+def _is_amazon_bot_wall(html: str) -> bool:
+    """Return True if Amazon served a bot-detection / CAPTCHA page."""
+    lower = html[:3000].lower()
+    signals = ["robot check", "captcha", "sorry/index", "automated access",
+               "enter the characters you see", "api-services-support@amazon.com"]
+    return any(s in lower for s in signals)
+
+
 def extract_amazon_images(html: str) -> List[str]:
-    import re
-    urls = []
+    """Extract Amazon product images using a three-tier fallback chain."""
+    urls: List[str] = []
+
+    # ── Tier 1: colorImages JS block (highest fidelity) ──────────────────────
     for marker in ['"colorImages"', "'colorImages'"]:
         s = html.find(marker)
-        if s == -1: continue
-        pos = html.find("initial", s); b = html.find("[", pos)
-        if pos != -1 and b != -1:
+        if s == -1:
+            continue
+        pos = html.find("initial", s)
+        b = html.find("[", pos) if pos != -1 else -1
+        if b != -1:
             block = js_array_block(html, b)
             urls += re.findall(r'https://m\.media-amazon\.com/images/I/[^"\'\\\s]+', block)
-    return urls
+
+    # ── Tier 2: hiRes JSON keys ───────────────────────────────────────────────
+    if not urls:
+        for m in re.finditer(r'"hiRes"\s*:\s*"(https://[^"]+)"', html):
+            urls.append(m.group(1))
+
+    # ── Tier 3: raw m.media-amazon.com URL scan ───────────────────────────────
+    if not urls:
+        raw = re.findall(
+            r'https://m\.media-amazon\.com/images/I/[A-Za-z0-9._+%-]+\.(?:jpg|png|webp)',
+            html
+        )
+        urls.extend(upgrade_amazon_url(u) for u in raw)
+
+    return dedupe([u for u in urls if is_product_img(u)])
 
 
 def normalize(text: str) -> str:
@@ -338,54 +364,123 @@ def _get_brand_keywords(brand: str, title: str) -> List[str]:
     return kws
 
 
-def scrape_amazon(query: str, brand: str, title: str, browser: Browser) -> Tuple[str, str, List[str]]:
+def _amazon_title_from_card(card) -> str:
+    """Extract the best title text from an Amazon search result card."""
+    # Try progressively broader selectors
+    for sel in ['h2 span', 'h2 a span', '.a-size-base-plus', '.a-size-medium', 'h2']:
+        el = card.query_selector(sel)
+        if el:
+            t = (el.inner_text() or "").strip()
+            if t:
+                return t
+    return ""
+
+
+def scrape_amazon(query: str, brand: str, title: str, browser: Browser) -> Tuple[str, str, List[str], str]:
+    """Scrape Amazon India for a product. Returns (matched_title, url, image_urls, price)."""
     search_url = f"https://www.amazon.in/s?k={quote_plus(query)}"
     page = browser.new_page()
     try:
         page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(3500)
+
+        # ── Bot-wall check on search page ────────────────────────────────────
+        search_html = page.content()
+        if _is_amazon_bot_wall(search_html):
+            LOG.warning("  [Amazon] Bot-wall detected on search page — skipping")
+            page.close()
+            return "", "", [], "N/A"
+
         cards = page.query_selector_all('[data-component-type="s-search-result"]')
         candidates = []
-        for card in cards[:10]:
+        for card in cards[:12]:
             link_el = card.query_selector('a[href*="/dp/"]')
-            if not link_el: continue
-            title_el = card.query_selector('h2')
-            c_title = title_el.inner_text() if title_el else ""
-            candidates.append(("https://www.amazon.in" + link_el.get_attribute("href"), c_title))
-        
+            if not link_el:
+                continue
+            href = link_el.get_attribute("href") or ""
+            # Fix: only prepend base when href is relative
+            full_url = href if href.startswith("http") else "https://www.amazon.in" + href
+            # Strip query params that inflate the URL unnecessarily
+            full_url = full_url.split("?ref=")[0].split("&ref=")[0]
+            c_title = _amazon_title_from_card(card)
+            if c_title:
+                candidates.append((full_url, c_title))
+
         if not candidates:
-            page.close(); return "", "", []
-        
-        target = candidates[0]
-        target = candidates[0]
+            LOG.warning("  [Amazon] No candidates found on search page")
+            page.close()
+            return "", "", [], "N/A"
+
+        # ── Pick best match (relaxed threshold 65 for Amazon's verbose titles) ─
         best_score = 0
+        target = candidates[0]
         for href, ctitle in candidates:
             score = match_score(brand, title, ctitle)
+            LOG.debug("  [Amazon] candidate=%r score=%d", ctitle[:60], score)
             if score > best_score:
                 best_score = score
                 target = (href, ctitle)
-                
-        if best_score < 70:
-            page.close(); return "", "", []
-        
+
+        if best_score < 65:
+            LOG.warning("  [Amazon] Best score %d < 65 — no match", best_score)
+            page.close()
+            return "", "", [], "N/A"
+
+        LOG.info("  [Amazon] Matched %r (score=%d)", target[1][:60], best_score)
+
+        # ── Navigate to product page ─────────────────────────────────────────
         page.goto(target[0], wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(3000)
-        images = dedupe(extract_amazon_images(page.content()))[:5]
+        page.wait_for_timeout(2000)
+        # Scroll to trigger lazy-loaded image JS
+        try:
+            page.evaluate("window.scrollTo(0, 400)")
+        except Exception:
+            pass
+        page.wait_for_timeout(1500)
+
+        prod_html = page.content()
+
+        # ── Bot-wall check on product page ───────────────────────────────────
+        if _is_amazon_bot_wall(prod_html):
+            LOG.warning("  [Amazon] Bot-wall detected on product page")
+            page.close()
+            return "", "", [], "N/A"
+
+        images = dedupe(extract_amazon_images(prod_html))[:5]
+
+        # ── Price extraction ─────────────────────────────────────────────────
+        price = "N/A"
+        try:
+            soup_p = BeautifulSoup(prod_html, "html.parser")
+            whole = soup_p.select_one('.a-price-whole')
+            frac = soup_p.select_one('.a-price-fraction')
+            if whole:
+                w = whole.get_text(strip=True).replace(',', '').rstrip('.')
+                f = frac.get_text(strip=True) if frac else '00'
+                price = f"Rs. {w}.{f}"
+            else:
+                # fallback: search for ₹ spans
+                for span in soup_p.find_all('span'):
+                    t = span.get_text(strip=True)
+                    if '₹' in t and len(t) < 15:
+                        price = t.replace('₹', 'Rs. ')
+                        break
+        except Exception:
+            pass
+
         page.close()
-        return target[1], target[0], images
-    except Exception:
-        try: page.close()
-        except: pass
-        return "", "", []
+        return target[1], target[0], images, price
+
+    except Exception as exc:
+        LOG.warning("  [Amazon] Exception: %s", exc)
+        try:
+            page.close()
+        except Exception:
+            pass
+        return "", "", [], "N/A"
 
 
-def _extract_amazon_gallery(html: str) -> List[str]:
-    raw_urls = []
-    for m in re.finditer(r'"hiRes"\s*:\s*"(https://[^"]+)"', html):
-        raw_urls.append(m.group(1))
-    for url in re.findall(r'https://m\.media-amazon\.com/images/I/[A-Za-z0-9._+%-]+\.(?:jpg|png|webp)', html):
-        raw_urls.append(upgrade_amazon_url(url))
-    return dedupe([u for u in raw_urls if is_product_img(u)])[:MAX_GALLERY]
+# NOTE: _extract_amazon_gallery merged into extract_amazon_images (tiers 2 & 3)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -550,17 +645,17 @@ def process_product(product: Product, browser: Browser) -> ScrapeResult:
         result.source, result.matched_title, result.product_url, result.price = "hyperpure", title, url, price
         result.image_urls = [("hyperpure", img) for img in images]
         
-        # ALSO fetch Amazon
-        a_title, a_url, a_images = scrape_amazon(query, product.brand, product.title, browser)
-        if a_images and match_score(product.brand, product.title, a_title) >= 70:
+        # ALSO fetch Amazon for supplemental images
+        a_title, a_url, a_images, _a_price = scrape_amazon(query, product.brand, product.title, browser)
+        if a_images and match_score(product.brand, product.title, a_title) >= 65:
             result.image_urls.extend([("amazon", img) for img in a_images])
             
         return result
 
     # 2. Amazon
-    title, url, images = scrape_amazon(query, product.brand, product.title, browser)
-    if images and match_score(product.brand, product.title, title) >= 70:
-        result.source, result.matched_title, result.product_url = "amazon", title, url
+    title, url, images, price = scrape_amazon(query, product.brand, product.title, browser)
+    if images and match_score(product.brand, product.title, title) >= 65:
+        result.source, result.matched_title, result.product_url, result.price = "amazon", title, url, price
         result.image_urls = [("amazon", img) for img in images]
         return result
 

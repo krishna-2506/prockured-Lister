@@ -18,6 +18,7 @@ An end-to-end automation toolkit built for Prockured's internal product operatio
   - [1. Image Scraper](#1-image-scraper)
   - [2. Listing Automation](#2-listing-automation)
   - [3. Multi-Source Amazon-Strict Scraper](#3-multi-source-amazon-strict-scraper)
+  - [4. Automation Bot (AutoBot)](#4-automation-bot-autobot)
 - [Input Format](#input-format)
 - [Output Files](#output-files)
 - [Environment Variables](#environment-variables)
@@ -34,10 +35,15 @@ prockured_scraper_package/
 ├── Listing Final.py                  # Full listing automation with keyboard hotkeys (main tool)
 ├── listin v2.py                      # Lighter version of the listing automation script
 ├── multi_source_image_scraper_AMAZON_STRICT.py   # Strict Amazon-first multi-source scraper
+├── autobot.py                        # Enhanced automation bot for Prockured operations
+├── autobot v2.py                     # Next-generation automation with advanced features
 │
 ├── test_input.csv                    # Sample input file to test the scraper
 ├── veeba_input.csv                   # Real product input used during development
 ├── start.bat                         # Launches Brave in remote-debug mode (needed for listing automation)
+│
+├── bakery_ingredients_hyperpure_single_sale_price.json      # Sample data: Hyperpure pricing for bakery items
+├── batch_products_purix_2_products.json                     # Sample data: Purix batch product listings
 │
 ├── prockured_output/                 # Auto-generated: scraper output (images, CSVs, logs)
 └── prockured_scraper_output/         # Auto-generated: alternate scraper output folder
@@ -154,6 +160,23 @@ python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx" --source
 python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx" --headful
 ```
 
+### 4. Automation Bot (AutoBot)
+
+Enhanced automation tools for Prockured product operations:
+
+```bash
+# Run the main automation bot
+python autobot.py
+
+# Run the next-generation version with advanced features
+python "autobot v2.py"
+```
+
+These tools provide automated workflows for:
+- Batch product processing across multiple sources (Hyperpure, Purix, etc.)
+- Automated data collection and consolidation
+- Streamlined product catalog updates
+
 ---
 
 ## Input Format
@@ -189,6 +212,15 @@ For the multi-source scraper, outputs go to `image_scraper_output/`:
 | `image_links.xlsx` | All image links per product |
 | `catalog_review.xlsx` | Match quality review sheet |
 | `download_report.xlsx` | Download status per image |
+
+### Sample Data Files
+
+Reference JSON files for understanding data structures from various sources:
+
+| File | Description |
+|------|-------------|
+| `bakery_ingredients_hyperpure_single_sale_price.json` | Sample Hyperpure product data with pricing for bakery ingredients |
+| `batch_products_purix_2_products.json` | Sample Purix batch product listings |
 
 ---
 

@@ -3,6 +3,7 @@ prockured_output/
 prockured_scraper_output/
 image_scraper_output/
 old/
+batch_reports/
 
 # Python cache
 __pycache__/

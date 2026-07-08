@@ -19,18 +19,38 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 
 CDP_URL = "http://127.0.0.1:9222"
 
-# Local output from your scraper. Keep the script in C:\Users\krish\dsa and it will find this automatically.
-# Absolute scraper output path on your Windows machine. You can still override with environment variables if needed.
-DEFAULT_OUTPUT_DIR = Path(os.environ.get("PROCKURED_OUTPUT_DIR", r"C:\Users\krish\dsa\prockured_output"))
-DEFAULT_IMAGE_ROOT = Path(os.environ.get("PROCKURED_IMAGE_ROOT", r"C:\Users\krish\dsa\prockured_output\images"))
+# Run-folder based paths. Keep this script, batch_products.json, CSVs, images,
+# or prockured_output folder in the same folder you run the script from.
+# You can still override any path with environment variables if needed.
+RUN_DIR = Path(os.environ.get("PROCKURED_RUN_DIR", Path.cwd())).resolve()
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+def _first_existing_path(*paths):
+    for path in paths:
+        p = Path(path)
+        if p.exists():
+            return p
+    return Path(paths[0])
+
+DEFAULT_OUTPUT_DIR = Path(os.environ.get(
+    "PROCKURED_OUTPUT_DIR",
+    str(_first_existing_path(RUN_DIR, SCRIPT_DIR))
+))
+DEFAULT_IMAGE_ROOT = Path(os.environ.get(
+    "PROCKURED_IMAGE_ROOT",
+    str(_first_existing_path(RUN_DIR / "images", RUN_DIR / "prockured_output" / "images", DEFAULT_OUTPUT_DIR, SCRIPT_DIR / "images", SCRIPT_DIR / "prockured_output" / "images"))
+))
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_MEDIA_UPLOADS = int(os.environ.get("PROCKURED_MAX_MEDIA_UPLOADS", "8"))
 BASE_MARKUP_MIN = 10
 BASE_MARKUP_MAX = 30
 
 ADMIN_PRODUCTS_URL = os.environ.get("PROCKURED_ADMIN_PRODUCTS_URL", "https://store.prockured.com/admin/products")
-DEFAULT_BATCH_JSON = Path(os.environ.get("PROCKURED_BATCH_JSON", r"C:\\Users\\krish\\dsa\\batch_products.json"))
-DEFAULT_BATCH_REPORT_DIR = Path(os.environ.get("PROCKURED_BATCH_REPORT_DIR", r"C:\\Users\\krish\\dsa\\batch_reports"))
+DEFAULT_BATCH_JSON = Path(os.environ.get(
+    "PROCKURED_BATCH_JSON",
+    str(_first_existing_path(RUN_DIR / "batch_products.json", SCRIPT_DIR / "batch_products.json"))
+))
+DEFAULT_BATCH_REPORT_DIR = Path(os.environ.get("PROCKURED_BATCH_REPORT_DIR", str(RUN_DIR / "batch_reports")))
 
 command_queue = queue.Queue()
 stop_requested = False
@@ -2129,8 +2149,14 @@ def read_current_product_name_from_page(page) -> str:
 
 
 def get_product_name_for_matching(page, data: ProductData) -> str:
-    name = (data.basics.get("Product Name") if data and data.basics else "") or ""
-    name = name.strip()
+    # Old logic preferred Product Name from loaded data, otherwise read it from the page.
+    # Batch mode does NOT update Product Name, but it stores the JSON name under
+    # __Batch Product Name so Media/Pricing can still use the old matching logic
+    # without having to jump back to Basic just to read the name.
+    name = ""
+    if data and data.basics:
+        name = (data.basics.get("Product Name") or data.basics.get("__Batch Product Name") or "")
+    name = str(name or "").strip()
     if name:
         return name
     return read_current_product_name_from_page(page)
@@ -2817,6 +2843,32 @@ def fill_pricing(page, data: ProductData):
     base_price, sale_price, markup = compute_base_and_discount_prices(product_name, sale_raw)
 
     if not open_pricing_tab(page):
+        # Batch safety retry: old pricing logic is still used, but if the first open attempt
+        # misses the tab, force the page to the top and try the exact Pricing tab one more time.
+        try:
+            page.evaluate("() => { window.scrollTo({top: 0, left: 0, behavior: 'instant'}); }")
+            page.wait_for_timeout(500)
+            try:
+                page.get_by_role("tab", name=re.compile(r"^\s*Pricing\s*$", re.I)).first.click(timeout=1800, force=True)
+            except Exception:
+                try:
+                    page.get_by_role("button", name=re.compile(r"^\s*Pricing\s*$", re.I)).first.click(timeout=1800, force=True)
+                except Exception:
+                    page.evaluate(r"""() => {
+                        function visible(el){ const r=el.getBoundingClientRect(); const s=getComputedStyle(el); return r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden'; }
+                        const els=[...document.querySelectorAll('button,a,[role=tab],div,span')]
+                          .filter(visible)
+                          .map(el=>({el,t:(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim(),r:el.getBoundingClientRect(),role:el.getAttribute('role')||''}))
+                          .filter(o=>/^pricing$/i.test(o.t) && o.r.top>=50 && o.r.top<=300)
+                          .sort((a,b)=>(a.role==='tab'?0:10)-(b.role==='tab'?0:10)||a.r.top-b.r.top||a.r.left-b.r.left);
+                        if(els.length){ els[0].el.scrollIntoView({block:'center', inline:'nearest'}); els[0].el.click(); return true; }
+                        return false;
+                    }""")
+            page.wait_for_timeout(1500)
+        except Exception:
+            pass
+
+    if not is_pricing_tab_visible(page):
         log("Could not confirm Pricing tab. Pricing values were NOT pasted anywhere.")
         log("Open Pricing tab manually and press Alt + Shift + R again.")
         return
@@ -3018,6 +3070,11 @@ def fill_sections_for_item(item: dict) -> set:
         # Batch default: keep the old working fill flow, including pricing when a sale price exists.
         out = {"category", "brand", "basics", "attributes", "seo"}
 
+    # Media should behave like the old Full Fill: scan local scraper folders/CSVs and upload if a match exists.
+    # Set admin.skip_media = true only when you want to disable it for a batch.
+    if not bool(admin.get("skip_media")):
+        out.add("media")
+
     # Pricing should follow the old pricing logic whenever a sale_price is supplied, unless explicitly disabled.
     if not value_is_blank(pricing.get("sale_price")) and not bool(admin.get("skip_pricing")):
         out.add("pricing")
@@ -3031,11 +3088,15 @@ def product_data_from_batch_item(item: dict, update_product_name: bool = False) 
     pricing = item.get("pricing") or {}
     attrs = item.get("attributes") or {}
 
-    # Keep old filling logic, but do not update Product Name by default because OMS already created it.
+    # Batch v12: fill Product Name from JSON using the exact old Basics-page logic.
+    # The old fill_basics() function already handles Product Name safely by the PRODUCT NAME label,
+    # so Product Name should be included in data.basics instead of being kept only for Media/Pricing matching.
+    if not value_is_blank(basics.get("product_name")):
+        product_name_value = str(basics.get("product_name")).strip()
+        data.basics["Product Name"] = product_name_value
+        data.basics["__Batch Product Name"] = product_name_value
     if not value_is_blank(basics.get("product_type")):
         data.basics["Product Type"] = str(basics.get("product_type")).strip()
-    if update_product_name and not value_is_blank(basics.get("product_name")):
-        data.basics["Product Name"] = str(basics.get("product_name")).strip()
     if not value_is_blank(basics.get("product_tags")):
         data.basics["Product Tags"] = str(basics.get("product_tags")).strip()
     if not value_is_blank(basics.get("description")):
@@ -4002,7 +4063,7 @@ def run_batch_json(page, batch_json_path: Path = DEFAULT_BATCH_JSON):
             # type Bakery Ingredients → Enter once → Tab twice → verify focus reached Brand.
             if "basics" in sections:
                 fill_basics(page, data)
-                batch_logger.write("Basics filled using existing logic.")
+                batch_logger.write("Basics filled using existing logic, including Product Name when provided.")
 
             if "category" in sections:
                 click_tab(page, "Basic")
@@ -4204,6 +4265,12 @@ def main():
     log("Alt + Shift + D  = Debug Current Tab")
     log("Alt + Shift + X  = Stop Current Action")
     log("Alt + Shift + Q  = Quit")
+    log("========================================")
+    log(f"Run folder: {RUN_DIR}")
+    log(f"Batch JSON default: {DEFAULT_BATCH_JSON}")
+    log(f"Media/CSV scan folder: {DEFAULT_OUTPUT_DIR}")
+    log(f"Image scan folder: {DEFAULT_IMAGE_ROOT}")
+    log(f"Reports folder: {DEFAULT_BATCH_REPORT_DIR}")
     log("========================================")
 
     hotkeys = start_hotkeys()

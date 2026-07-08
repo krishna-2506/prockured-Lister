@@ -3,9 +3,9 @@
 An end-to-end automation toolkit built for Prockured's internal product operations team. This project handles two major workflows:
 
 1. **Product Image Scraping** — Finds and downloads high-quality product images from multiple e-commerce platforms (Hyperpure, Amazon, Flipkart, BigBasket) based on a CSV input list.
-2. **Listing Automation** — Auto-fills the Prockured admin panel with product details (basics, attributes, SEO, pricing, media) by reading structured text from the clipboard — no manual typing needed.
+2. **Listing Automation** — Auto-fills the Prockured admin panel with product details (basics, attributes, SEO, pricing, media) by reading structured text from the clipboard — no manual typing needed. Supports both hotkey-triggered clipboard filling and automated batch JSON filling.
 
-> Built as an internship project at **Prockured** to speed up the product catalog management workflow.
+> Built as an internship project at **Prockured** to automate the product catalog management workflow.
 
 ---
 
@@ -16,8 +16,8 @@ An end-to-end automation toolkit built for Prockured's internal product operatio
 - [Setup & Installation](#setup--installation)
 - [Usage](#usage)
   - [1. Image Scraper](#1-image-scraper)
-  - [2. Listing Automation](#2-listing-automation)
-  - [3. Multi-Source Amazon-Strict Scraper](#3-multi-source-amazon-strict-scraper)
+  - [2. Listing Automation (Independent Bot)](#2-listing-automation-independent-bot)
+  - [3. Legacy Listing Script](#3-legacy-listing-script)
 - [Input Format](#input-format)
 - [Output Files](#output-files)
 - [Environment Variables](#environment-variables)
@@ -30,17 +30,17 @@ An end-to-end automation toolkit built for Prockured's internal product operatio
 ```
 prockured_scraper_package/
 │
-├── prockured_scraper.py              # Core image scraper (Hyperpure → Amazon → Flipkart → BigBasket → Google)
-├── Listing Final.py                  # Full listing automation with keyboard hotkeys (main tool)
-├── listin v2.py                      # Lighter version of the listing automation script
-├── multi_source_image_scraper_AMAZON_STRICT.py   # Strict Amazon-first multi-source scraper
+├── prockured_scraper.py            # Core image scraper (Hyperpure → Amazon → Flipkart → BigBasket → Google)
+├── independent_listing_bot.py      # Independent listing bot with hotkeys & batch JSON filling (Main Bot)
+├── Listing Script.py               # Legacy version of listing automation with keyboard hotkeys
 │
-├── test_input.csv                    # Sample input file to test the scraper
-├── veeba_input.csv                   # Real product input used during development
-├── start.bat                         # Launches Brave in remote-debug mode (needed for listing automation)
+├── test_input.csv                  # Sample input file to test the scraper
+├── veeba_input.csv                 # Real product input used during development
+├── start.bat                       # Launches Brave in remote-debug mode (needed for listing automation)
 │
-├── prockured_output/                 # Auto-generated: scraper output (images, CSVs, logs)
-└── prockured_scraper_output/         # Auto-generated: alternate scraper output folder
+├── prockured_output/               # Auto-generated: scraper output (images, CSVs, logs) [Git Ignored]
+├── prockured_scraper_output/       # Auto-generated: alternate scraper output folder [Git Ignored]
+└── batch_reports/                  # Auto-generated: batch run execution reports [Git Ignored]
 ```
 
 ---
@@ -62,16 +62,15 @@ For each product it:
 - Downloads images into a per-product folder
 - Writes summary CSVs (`summary.csv`, `all_images.csv`, `hyperpure_prices.csv`)
 
-### Listing Automation (`Listing Final.py`)
+### Listing Automation Bot (`independent_listing_bot.py`)
 
 Connects to a live Brave browser window via Chrome DevTools Protocol (CDP), then:
-- Listens for a keyboard hotkey (e.g. **Ctrl+Shift+L**)
-- Reads structured product data from your clipboard
-- Parses sections: `[BASICS]`, `[ATTRIBUTES]`, `[VARIANT PRICING]`, `[SEO]`, `[MEDIA]`, `[PRICING]`
-- Automatically fills in each form field on the Prockured admin page
-- Handles variable products with variant attributes and pricing rows
+- **Hotkey Mode**: Listens for keyboard hotkeys (e.g. **Alt+Shift+F** for Full Fill)
+- **Clipboard Parsing**: Reads structured product data from your clipboard and parses sections: `[BASICS]`, `[ATTRIBUTES]`, `[VARIANT PRICING]`, `[SEO]`, `[MEDIA]`, `[PRICING]`
+- **Batch JSON Mode**: Can read a batch list of products from a JSON file (e.g. `batch_products.json`), automatically search them by SKU, fill out the form fields, and update the products on the Prockured admin page.
+- Handles variable products with variant attributes and pricing rows.
 
-This means you can paste a product spec from ChatGPT or a spreadsheet, hit the hotkey, and the whole form fills itself out.
+This allows you to copy a product spec from ChatGPT or a spreadsheet, hit a hotkey, and have the form filled out automatically.
 
 ---
 
@@ -86,8 +85,8 @@ This means you can paste a product spec from ChatGPT or a spreadsheet, hit the h
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/prockured-scraper.git
-cd prockured-scraper
+git clone https://github.com/krishna-2506/prockured-Lister.git
+cd prockured-scraper-package
 ```
 
 ### 2. Install dependencies
@@ -132,26 +131,43 @@ python prockured_scraper.py your_products.csv --no-download
 python prockured_scraper.py your_products.csv --output my_output_folder
 ```
 
-### 2. Listing Automation
+### 2. Listing Automation (Independent Bot)
 
 > Make sure Brave is running in debug mode (see step 4 above) and the product edit page is open.
 
 ```bash
-python "Listing Final.py"
+python independent_listing_bot.py
 ```
 
-Once running, use the keyboard hotkeys defined in the script to trigger form fills. The script reads from your clipboard automatically, so just copy the product spec and press the hotkey.
+Once running, use the following hotkeys to trigger actions:
 
-### 3. Multi-Source Amazon-Strict Scraper
+| Hotkey | Action |
+|---|---|
+| **Alt + Shift + L** | Load clipboard data |
+| **Alt + Shift + B** | Fill Basics |
+| **Alt + Shift + A** | Fill Attributes |
+| **Alt + Shift + V** | Generate/Fix Variations |
+| **Alt + Shift + S** | Fill SEO |
+| **Alt + Shift + M** | Fill Media |
+| **Alt + Shift + I** | Update Image Alt Text |
+| **Alt + Shift + R** | Fill Pricing |
+| **Alt + Shift + J** | Run Batch JSON Fill |
+| **Alt + Shift + F** | Full Fill (fills all sections) |
+| **Alt + Shift + D** | Debug Current Tab |
+| **Alt + Shift + X** | Stop Current Action |
+| **Alt + Shift + Q** | Quit |
 
+#### Running in Batch Mode Directly:
+You can also run batch filling directly from a JSON file:
 ```bash
-# Basic run with an Excel/CSV input
-python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx"
+python independent_listing_bot.py --batch path/to/batch_products.json
+```
 
-# Limit rows, skip download, choose sources
-python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx" --limit 10 --no-download
-python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx" --sources hyperpure,bigbasket,amazon
-python multi_source_image_scraper_AMAZON_STRICT.py "your_products.xlsx" --headful
+### 3. Legacy Listing Script
+
+For running the legacy version:
+```bash
+python "Listing Script.py"
 ```
 
 ---
@@ -182,14 +198,6 @@ After running the scraper, outputs appear in `prockured_output/` (or your custom
 | `scraper.log` | Full run log |
 | `images/<Brand>/<Product>/` | Downloaded images, organized by brand and product |
 
-For the multi-source scraper, outputs go to `image_scraper_output/`:
-
-| File | Description |
-|------|-------------|
-| `image_links.xlsx` | All image links per product |
-| `catalog_review.xlsx` | Match quality review sheet |
-| `download_report.xlsx` | Download status per image |
-
 ---
 
 ## Environment Variables
@@ -214,8 +222,8 @@ python prockured_scraper.py products.csv
 
 - The listing automation script connects over **CDP (port 9222)**. If you see a connection error, make sure `start.bat` was run before the script.
 - Matching is strict by design: brand, quantity (kg/g/ml), and pack count all have to line up before an image is accepted. This avoids wrong variants getting listed.
-- The `prockured_output/` and `prockured_scraper_output/` folders are gitignored since they contain downloaded images and internal data.
-- This project was written and tested on **Windows 10/11**. Linux/macOS would need minor path adjustments in `start.bat` and `Listing Final.py`.
+- Output folders (`prockured_output/`, `prockured_scraper_output/`, and `batch_reports/`) are in `.gitignore` to prevent committing internal data or run summaries.
+- This project was written and tested on **Windows 10/11**.
 
 ---
 
@@ -225,7 +233,6 @@ python prockured_scraper.py products.csv
 - [RapidFuzz](https://github.com/maxbachmann/RapidFuzz) — fuzzy string matching
 - [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) — HTML parsing
 - [Requests](https://docs.python-requests.org/) — HTTP
-- [Pandas](https://pandas.pydata.org/) — data handling (multi-source scraper)
 - [pynput](https://pynput.readthedocs.io/) — keyboard hotkey listener (listing tool)
 - [pyperclip](https://pypi.org/project/pyperclip/) — clipboard access (listing tool)
 - [tqdm](https://tqdm.github.io/) — progress bars
@@ -233,4 +240,4 @@ python prockured_scraper.py products.csv
 
 ---
 
-*Internship project — Prockured, 2025*
+*Internship project — Prockured, 2025-2026*

@@ -18,6 +18,7 @@ An end-to-end automation toolkit built for Prockured's internal product operatio
   - [1. Image Scraper](#1-image-scraper)
   - [2. Listing Automation (Independent Bot)](#2-listing-automation-independent-bot)
   - [3. Legacy Listing Script](#3-legacy-listing-script)
+- [Batch Listing Automation Workflow](#batch-listing-automation-workflow)
 - [Input Format](#input-format)
 - [Output Files](#output-files)
 - [Environment Variables](#environment-variables)
@@ -67,7 +68,7 @@ For each product it:
 Connects to a live Brave browser window via Chrome DevTools Protocol (CDP), then:
 - **Hotkey Mode**: Listens for keyboard hotkeys (e.g. **Alt+Shift+F** for Full Fill)
 - **Clipboard Parsing**: Reads structured product data from your clipboard and parses sections: `[BASICS]`, `[ATTRIBUTES]`, `[VARIANT PRICING]`, `[SEO]`, `[MEDIA]`, `[PRICING]`
-- **Batch JSON Mode**: Can read a batch list of products from a JSON file (e.g. `batch_products.json`), automatically search them by SKU, fill out the form fields, and update the products on the Prockured admin page.
+- **Batch JSON Mode**: Reads a batch list of products from a JSON file (e.g. `batch_products.json`), automatically searches them by SKU, fills out the form fields, and updates the products on the Prockured admin page.
 - Handles variable products with variant attributes and pricing rows.
 
 This allows you to copy a product spec from ChatGPT or a spreadsheet, hit a hotkey, and have the form filled out automatically.
@@ -169,6 +170,51 @@ For running the legacy version:
 ```bash
 python "Listing Script.py"
 ```
+
+---
+
+## Batch Listing Automation Workflow
+
+The **Batch JSON Filler** mode in `independent_listing_bot.py` is the most powerful and comprehensive feature in this toolkit. It automates catalog updates for multiple products sequentially. Below is the step-by-step breakdown of how it works and handles all components:
+
+### 1. Loading and Validating Input
+- Reads the batch JSON file (supported root keys: `"products"`, `"batch_products"`, `"items"`, `"data"`, or a direct list of objects).
+- Checks each item for missing required fields (like `sku` and `category_option`) or warning-level fields (like `description`, `short_description`, or `seo` fields) and flags them in a warning report.
+
+### 2. Locating the Product in the Prockured Admin
+- The bot navigates to the admin products list page (`https://store.prockured.com/admin/products`).
+- Inserts the product's unique **SKU** into the search field and submits.
+- Clicks on the first matching result.
+- Once the edit page loads, the bot grabs the SKU on the page and verifies it against the expected SKU to prevent editing the wrong product.
+
+### 3. Automating Form Sections
+Based on the `"fill_sections"` array in the JSON item (or defaults if not specified), it executes:
+- **Category Selection**: In the "Basic" tab, searches for the specified category, triggers the option, and executes a precise manual keyboard sequence (**Enter → Tab → Tab**) to safely transition focus back to the brand.
+- **Brand Selection**: Selects the brand dropdown value.
+- **Basics**: Populates Product Name, Product Type, Tags, Description (preserving exact paragraph spaces copied from spreadsheet/chat models), and Short Description.
+- **Attributes**: Automatically clears any existing attributes first to prevent duplication, then populates new attributes.
+- **Variations (Variable Products)**: If variant attributes are configured in the JSON, checks variation boxes, clicks generate, and populates the pricing grid for each variation.
+- **SEO**: Fills SEO Title, SEO Description, and SEO Keywords.
+- **Pricing**: Sets Base Price and Sale Price. If only `sale_price` is provided, it automatically computes a stable markup price (using a deterministic hash-based calculation from the product name to keep markups consistent).
+
+### 4. Smart Media Integration (Scraper Image Pipeline)
+The bot integrates directly with the output of the image scraper:
+- Resolves the product name and scans for images in three prioritized locations:
+  1. **Scraper CSV Report**: Looks up `all_images.csv` from the scraper output directory to find exact fuzzy matches of the product name with downloaded file paths.
+  2. **Organized Image Directory**: Scans the `prockured_output/images/` root folder recursively for folder names matching the product name or brand.
+  3. **JSON Manual Overrides**: Uses the path specified in `[MEDIA]` block's `Image Folder` if provided.
+- Uploads the top images (up to `MAX_MEDIA_UPLOADS`, default 8).
+- If `Replace Existing Images` is set to `Yes` / `True` in the JSON, the bot automatically clicks and removes all prior images in the admin panel before uploading new ones.
+- **SEO Alt Text Optimization**: Once images are uploaded, the bot hovers over each image card in the admin interface, opens the alt text field, and sets it to `<Product Name> Prockured Image <Index>` for SEO naming conventions.
+
+### 5. Saving and Report Generation
+- Clicks the **Update Product** button to save the changes.
+- Generates execution logs in `batch_reports/<timestamp>/`:
+  - `success_report.csv`: List of successfully updated SKUs.
+  - `failed_report.csv`: Details and stack traces of failed rows.
+  - `missing_data_report.csv`: Lists missing keys per SKU.
+  - `manual_review_report.csv`: Flags items that need manual human checks (e.g. brand not found).
+  - `batch_log.txt`: Detailed raw text console output logs.
 
 ---
 

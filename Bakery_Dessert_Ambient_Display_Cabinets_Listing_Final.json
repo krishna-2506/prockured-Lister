@@ -1,0 +1,434 @@
+[
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6307",
+      "model_name": "BDS6307",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 330 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 330 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 330 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 560 x 360 x 330 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 330 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 330 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "560 x 360 x 330 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Compact rectangular",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 560 x 360 x 330 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 560 x 360 x 330 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 560 x 360 x 330 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 34900,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6308",
+      "model_name": "BDS6308",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 600 x 600 x 260 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 600 x 600 x 260 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 600 x 600 x 260 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 600 x 600 x 260 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 600 x 600 x 260 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 600 x 600 x 260 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "600 x 600 x 260 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Wide square, low-profile",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 600 x 600 x 260 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 600 x 600 x 260 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 600 x 600 x 260 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 32300,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6309",
+      "model_name": "BDS6309",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 180 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 180 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 180 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 560 x 360 x 180 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 180 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 560 x 360 x 180 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "560 x 360 x 180 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Compact low-profile",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 560 x 360 x 180 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 560 x 360 x 180 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 560 x 360 x 180 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 29900,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6311",
+      "model_name": "BDS6311",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 1080 x 440 x 600 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 1080 x 440 x 600 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 1080 x 440 x 600 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 1080 x 440 x 600 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 1080 x 440 x 600 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 1080 x 440 x 600 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "1080 x 440 x 600 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Extra-wide large-format",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 1080 x 440 x 600 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 1080 x 440 x 600 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 1080 x 440 x 600 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 48860,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6312",
+      "model_name": "BDS6312",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 540 x 440 x 600 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 540 x 440 x 600 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 540 x 440 x 600 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 540 x 440 x 600 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 540 x 440 x 600 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 540 x 440 x 600 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "540 x 440 x 600 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Tall space-efficient",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 540 x 440 x 600 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 540 x 440 x 600 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 540 x 440 x 600 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 41921,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6313",
+      "model_name": "BDS6313",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 920 x 500 x 440 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 920 x 500 x 440 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 920 x 500 x 440 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 920 x 500 x 440 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 920 x 500 x 440 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 920 x 500 x 440 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "920 x 500 x 440 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Wide rectangular",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 920 x 500 x 440 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 920 x 500 x 440 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 920 x 500 x 440 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 43772,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6314",
+      "model_name": "BDS6314",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 500 x 560 x 500 mm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 500 x 560 x 500 mm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 500 x 560 x 500 mm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 500 x 560 x 500 mm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 500 x 560 x 500 mm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 500 x 560 x 500 mm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "500 x 560 x 500 mm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Deep square",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 500 x 560 x 500 mm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 500 x 560 x 500 mm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 500 x 560 x 500 mm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 31886,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  },
+  {
+    "admin": {
+      "row_id": "",
+      "sku": "174178BDS6315",
+      "model_name": "BDS6315",
+      "lookup_by": "sku",
+      "category_option": "Food Display Warmer",
+      "brand_option": "",
+      "hsn_code": "",
+      "gst_percent": "",
+      "unit": "pcs",
+      "status": "ACTIVE",
+      "skip_media": false,
+      "fill_sections": [
+        "category",
+        "brand",
+        "basics",
+        "attributes",
+        "seo",
+        "media",
+        "pricing"
+      ]
+    },
+    "basics": {
+      "product_type": "Simple Product",
+      "product_name": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 58 x 47 x 45 cm",
+      "product_tags": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 58 x 47 x 45 cm, stainless steel bakery display cabinet, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, croissant display cabinet, pastry display cabinet, cafe bakery display",
+      "description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 58 x 47 x 45 cm is designed for organised ambient presentation of bakery and dessert selections in professional foodservice spaces. Its stainless-steel outer structure provides a clean commercial appearance, while the wooden interior adds warmth to the product presentation and complements breads, pastries and desserts.\n\nThe clear acrylic panels improve product visibility, and the acrylic sliding doors allow convenient access during replenishment and service while helping keep the display area neatly enclosed. The cabinet is suitable for presenting croissants, pastries, breads, muffins, cookies, cakes and desserts at normal ambient conditions in cafés, bakeries, hotels, buffet counters and dessert stations.\n\nWith dimensions of 58 x 47 x 45 cm, Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 58 x 47 x 45 cm offers a practical combination of durable construction, attractive interior presentation and easy service access. It is well suited to front-counter merchandising, breakfast buffet presentation and everyday bakery display requirements.",
+      "short_description": "Stainless Steel Bakery & Dessert Ambient Display Cabinet with Wooden Interior 58 x 47 x 45 cm features a stainless-steel exterior structure, wooden interior and clear acrylic panels for professional ambient food presentation. Acrylic sliding doors provide convenient service access while keeping breads, croissants, pastries and desserts neatly arranged and clearly visible. Its practical format is suitable for cafés, bakeries, hotels, buffet counters and dessert stations."
+    },
+    "attributes": {
+      "dimensions": "58 x 47 x 45 cm",
+      "material": "Stainless Steel, Wood and Acrylic",
+      "finish": "Stainless Steel Exterior with Wooden Interior",
+      "door_type": "Acrylic Sliding Doors",
+      "cabinet_format": "Medium rectangular",
+      "usage": "Croissants, pastries, breads, muffins, cookies, cakes and desserts",
+      "exterior_material": "Stainless Steel",
+      "interior_material": "Wood"
+    },
+    "seo": {
+      "seo_title": "Stainless Steel Bakery Display Cabinet 58 x 47 x 45 cm",
+      "seo_description": "Stainless steel bakery and dessert ambient display cabinet in 58 x 47 x 45 cm with a wooden interior, clear acrylic panels and sliding doors for cafés, bakeries, hotels and buffet counters.",
+      "seo_keywords": "stainless steel bakery display cabinet 58 x 47 x 45 cm, wooden interior display cabinet, dessert display cabinet, ambient food display cabinet, acrylic sliding door cabinet, pastry display cabinet, croissant display cabinet, cafe display cabinet"
+    },
+    "pricing": {
+      "sale_price": 32930,
+      "currency": "INR",
+      "tax_note": "+ Tax as per admin GST setting"
+    },
+    "media": {
+      "replace_existing_images": "No"
+    }
+  }
+]

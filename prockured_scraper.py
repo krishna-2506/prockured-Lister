@@ -506,7 +506,7 @@ def scrape_flipkart(query: str, browser: Browser) -> Tuple[str, str, List[str]]:
         
         images = []
         for img in soup.select('img[src*="rukminim"]'):
-            src = re.sub(r'/image/\d+/\d+/', '/image/832/832/', img.get('src', ''))
+            src = re.sub(r'/image/\d+/\d+/', '/image/1664/1664/', img.get('src', ''))
             if is_product_img(src): images.append(src)
         
         page.close()
@@ -546,18 +546,155 @@ def scrape_bigbasket(query: str, browser: Browser) -> Tuple[str, str, List[str]]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SOURCE 5: GOOGLE
+# SOURCE 5: JIOMART
+# ══════════════════════════════════════════════════════════════════════════════
+
+def scrape_jiomart(query: str, browser: Browser) -> Tuple[str, str, List[str]]:
+    search_url = f"https://www.jiomart.com/search/{quote_plus(query)}"
+    page = browser.new_page()
+    try:
+        page.goto(search_url, wait_until="domcontentloaded", timeout=25000)
+        page.wait_for_timeout(3500)
+        
+        link = page.query_selector('a.plp-card-wrapper')
+        if not link:
+            link = page.query_selector('a[href*="/p/"]')
+            
+        if not link:
+            page.close(); return "", "", []
+            
+        href = link.get_attribute("href")
+        if href and not href.startswith("http"):
+            href = "https://www.jiomart.com" + href
+            
+        page.goto(href, wait_until="domcontentloaded", timeout=25000)
+        page.wait_for_timeout(2500)
+        
+        soup = BeautifulSoup(page.content(), "html.parser")
+        title_el = soup.select_one('h1')
+        title_text = title_el.text.strip() if title_el else "JioMart Product"
+        
+        images = []
+        for img in soup.select('.swiper-wrapper img') + soup.select('.product-image img'):
+            src = img.get('src', '') or img.get('data-src', '')
+            if is_product_img(src):
+                images.append(src)
+                
+        page.close()
+        return title_text, href, dedupe(images)
+    except Exception:
+        try: page.close()
+        except: pass
+        return "", "", []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SOURCE 6: BLINKIT
+# ══════════════════════════════════════════════════════════════════════════════
+
+def scrape_blinkit(query: str, browser: Browser) -> Tuple[str, str, List[str]]:
+    search_url = f"https://blinkit.com/s/?q={quote_plus(query)}"
+    page = browser.new_page()
+    blinkit_images = []
+    blinkit_title = ""
+    
+    def handle_response(response):
+        nonlocal blinkit_title, blinkit_images
+        if "v5/search" in response.url or "v3/search" in response.url or "search" in response.url:
+            try:
+                if response.status == 200:
+                    data = response.json()
+                    def find_keys(node, kv):
+                        if isinstance(node, list):
+                            for i in node:
+                                for x in find_keys(i, kv): yield x
+                        elif isinstance(node, dict):
+                            if kv in node: yield node[kv]
+                            for j in node.values():
+                                for x in find_keys(j, kv): yield x
+                    
+                    names = list(find_keys(data, "name"))
+                    images = list(find_keys(data, "image_url"))
+                    
+                    if not blinkit_title and names:
+                        for n in names:
+                            if isinstance(n, str) and len(n) > 5 and query.split()[0].lower() in n.lower():
+                                blinkit_title = n
+                                break
+                    
+                    for img in images:
+                        if isinstance(img, str) and is_product_img(img):
+                            blinkit_images.append(img)
+            except Exception:
+                pass
+
+    page.on("response", handle_response)
+    
+    try:
+        page.goto(search_url, wait_until="domcontentloaded", timeout=25000)
+        page.wait_for_timeout(4000)
+        
+        if not blinkit_images:
+            soup = BeautifulSoup(page.content(), "html.parser")
+            product_cards = soup.select('div[class*="Product"]') or soup.select('a[href*="/pr/"]')
+            if product_cards:
+                first_card = product_cards[0]
+                title_el = first_card.select_one('div[class*="name"]') or first_card.select_one('div')
+                if title_el:
+                    blinkit_title = title_el.text.strip()
+                for img in first_card.select('img'):
+                    src = img.get('src')
+                    if src and is_product_img(src):
+                        blinkit_images.append(src)
+                        
+        page.close()
+        valid_images = dedupe([u for u in blinkit_images if "icon" not in u.lower()])
+        return blinkit_title or "Blinkit Product", search_url, valid_images[:MAX_GALLERY]
+    except Exception:
+        try: page.close()
+        except: pass
+        return "", "", []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SOURCE 7: GOOGLE
 # ══════════════════════════════════════════════════════════════════════════════
 
 def scrape_google_images(query: str, browser: Browser) -> List[str]:
     url = f"https://www.google.com/search?q={quote_plus(query + ' product')}&tbm=isch"
     page = browser.new_page()
+    images = []
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=20000)
         page.wait_for_timeout(2000)
-        html = page.content()
+        
+        # Click the first few image tiles to open the side panel
+        tiles = page.query_selector_all('div[data-ri]')
+        if not tiles:
+             tiles = page.query_selector_all('img[data-src]')
+             
+        for i, tile in enumerate(tiles[:3]):
+            try:
+                tile.click(timeout=2000)
+                page.wait_for_timeout(1500)
+                
+                side_images = page.query_selector_all('img[src^="http"]')
+                for img in side_images:
+                    src = img.get_attribute("src")
+                    if src and "encrypted-tbn0" not in src and "favicon" not in src:
+                        w = img.get_attribute("width")
+                        if w and w.isdigit() and int(w) > 200:
+                            images.append(src)
+            except Exception:
+                pass
+                
+        # Fallback to old behavior if nothing found
+        if not images:
+            html = page.content()
+            images = dedupe(re.findall(r'https?://[^\s"\'<>]+?\.(?:jpg|png|webp)', html))
+            
         page.close()
-        return dedupe(re.findall(r'https?://[^\s"\'<>]+?\.(?:jpg|png|webp)', html))[:8]
+        return dedupe(images)[:8]
     except Exception:
         try: page.close()
         except: pass
@@ -569,13 +706,13 @@ def scrape_google_images(query: str, browser: Browser) -> List[str]:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def download_image(match: ScrapeResult, output_dir: Path) -> List[DownloadedImg]:
-    source_map = {"hyperpure": "h", "amazon": "a", "flipkart": "f", "bigbasket": "b", "google": "g"}
+    source_map = {"hyperpure": "h", "amazon": "a", "flipkart": "f", "bigbasket": "b", "jiomart": "j", "blinkit": "bl", "google": "g"}
     base_name = safe_filename(match.product.title, 80)
     brand_safe = safe_filename(match.product.brand, 40) if match.product.brand else "Unknown"
     main_folder = output_dir / "images" / brand_safe / base_name
     
     results = []
-    idx_map = {"hyperpure": 1, "amazon": 1, "flipkart": 1, "bigbasket": 1, "google": 1}
+    idx_map = {"hyperpure": 1, "amazon": 1, "flipkart": 1, "bigbasket": 1, "jiomart": 1, "blinkit": 1, "google": 1}
     
     for src_type, url in match.image_urls:
         initial = source_map.get(src_type, "x")
@@ -673,7 +810,21 @@ def process_product(product: Product, browser: Browser) -> ScrapeResult:
         result.image_urls = [("bigbasket", img) for img in images]
         return result
 
-    # 5. Google
+    # 5. JioMart
+    title, url, images = scrape_jiomart(query, browser)
+    if images and match_score(product.brand, product.title, title) >= 70:
+        result.source, result.matched_title, result.product_url = "jiomart", title, url
+        result.image_urls = [("jiomart", img) for img in images]
+        return result
+
+    # 6. Blinkit
+    title, url, images = scrape_blinkit(query, browser)
+    if images and match_score(product.brand, product.title, title) >= 65:
+        result.source, result.matched_title, result.product_url = "blinkit", title, url
+        result.image_urls = [("blinkit", img) for img in images]
+        return result
+
+    # 7. Google
     images = scrape_google_images(query, browser)
     if images:
         result.source, result.matched_title, result.product_url = "google", "Google Search", f"https://www.google.com/search?q={quote_plus(query)}"
